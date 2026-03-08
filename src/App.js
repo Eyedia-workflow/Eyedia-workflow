@@ -628,13 +628,7 @@ export default function EyediaApp() {
         
         {/* Logo */}
         <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
-          <div style={{ width: "28px", height: "28px", borderRadius: "7px", background: "#111", border: "1px solid #1a1a1a", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <svg viewBox="0 0 100 100" width="18" height="18">
-              <ellipse cx="50" cy="38" rx="28" ry="26" fill="#FFD600" />
-              <circle cx="50" cy="38" r="11" fill="#00C9CC" />
-              <rect x="43" y="63" width="14" height="18" rx="4" fill="white" opacity="0.7" />
-            </svg>
-          </div>
+          <img src="/logo.jpg" alt="Eyedia" style={{ width: "32px", height: "32px", borderRadius: "8px", objectFit: "cover" }} />
           <div>
             <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: "13px", letterSpacing: "2px", color: "#fff", lineHeight: 1 }}>WE ARE EYEDIA</div>
             <div style={{ fontSize: "8px", color: "#333", letterSpacing: "1px", textTransform: "uppercase" }}>Workflow OS</div>
