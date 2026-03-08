@@ -24,7 +24,7 @@ const ROLE_BADGE = {
 
 function getRole(profile, clientMembers) {
   if (profile?.is_owner) return "owner";
-  if (clientMembers?.some(m => m.profile_id === profile?.id && m.client_role?.toLowerCase().includes("manager"))) return "manager";
+  if (clientMembers?.some(m => m.profile_id === profile?.id && m.project_role?.toLowerCase().includes("manager"))) return "manager";
   return "employee";
 }
 
@@ -56,8 +56,8 @@ function Badge({ status }) {
   );
 }
 
-function RolePill({ profile }) {
-  const role = getRole(profile, clientMembers);
+function RolePill({ profile, clientMembers }) {
+  const role = getRole(profile, clientMembers || []);
   const rb = ROLE_BADGE[role];
   return (
     <span style={{ fontSize: "9px", color: rb.color, background: `${rb.color}15`, padding: "2px 8px", borderRadius: "10px", fontWeight: 700, letterSpacing: "0.5px" }}>{rb.label}</span>
@@ -672,7 +672,7 @@ export default function EyediaApp() {
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "11px", color: "#333", background: "#0d0d0d", padding: "4px 10px", borderRadius: "8px", border: "1px solid #111" }}>
             {profile?.full_name || user.email}
-            {profile && <RolePill profile={profile} />}
+            {profile && <RolePill profile={profile} clientMembers={clientMembers} />}
           </div>
           <button onClick={() => supabase.auth.signOut()} style={{ padding: "4px 10px", background: "transparent", border: "1px solid #1a1a1a", borderRadius: "7px", color: "#333", fontSize: "10px", cursor: "pointer" }}>Sign out</button>
         </div>
