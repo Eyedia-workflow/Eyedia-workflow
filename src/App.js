@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const SUPABASE_URL = "https://nbojegbpyzfhfeqoiebn.supabase.co";
 const SUPABASE_KEY = "sb_publishable_0vLCym3N81KNa7M-GBcXLA_AnSPDis5";
@@ -589,6 +589,16 @@ export default function EyediaApp() {
   if (!authChecked) return <div style={{ background: "#080808", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", color: "#333", fontFamily: "sans-serif" }}>Loading...</div>;
   if (!user) return <AuthScreen onLogin={(u) => { setUser(u); loadProfile(u.id); }} />;
 
+  const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
+
+  const navIcons = {
+    overview:     "⬡",
+    tasks:        "◈",
+    projects:     "◻",
+    deliverables: "◷",
+    followups:    "⚡",
+  };
+
   return (
     <div style={{ fontFamily: "'DM Sans', 'Helvetica Neue', sans-serif", background: "#080808", minHeight: "100vh", color: "#e0e0e0" }}>
       <style>{`
@@ -601,54 +611,76 @@ export default function EyediaApp() {
         @keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
         .fade-in { animation: fadeIn 0.25s ease forwards; }
         select option { background: #111; }
+        @media (max-width: 767px) {
+          .desktop-sidebar { display: none !important; }
+          .desktop-topbar-right { display: none !important; }
+          .main-content { padding: 16px !important; padding-bottom: 80px !important; }
+          .biz-toggle button { padding: 6px 10px !important; font-size: 11px !important; }
+        }
+        @media (min-width: 768px) {
+          .mobile-bottom-nav { display: none !important; }
+          .mobile-top-biz { display: none !important; }
+        }
       `}</style>
 
-      {/* Top Bar */}
-      <div style={{ borderBottom: "1px solid #111", padding: "0 24px", display: "flex", alignItems: "center", justifyContent: "space-between", height: "58px", position: "sticky", top: 0, background: "#080808", zIndex: 100 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-          <div style={{ width: "30px", height: "30px", borderRadius: "8px", background: "#111", border: "1px solid #1a1a1a", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <svg viewBox="0 0 100 100" width="20" height="20">
+      {/* ── TOP BAR ── */}
+      <div style={{ borderBottom: "1px solid #111", padding: "0 16px", display: "flex", alignItems: "center", justifyContent: "space-between", height: "54px", position: "sticky", top: 0, background: "#080808", zIndex: 100 }}>
+        
+        {/* Logo */}
+        <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
+          <div style={{ width: "28px", height: "28px", borderRadius: "7px", background: "#111", border: "1px solid #1a1a1a", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <svg viewBox="0 0 100 100" width="18" height="18">
               <ellipse cx="50" cy="38" rx="28" ry="26" fill="#FFD600" />
               <circle cx="50" cy="38" r="11" fill="#00C9CC" />
               <rect x="43" y="63" width="14" height="18" rx="4" fill="white" opacity="0.7" />
             </svg>
           </div>
           <div>
-            <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: "14px", letterSpacing: "2.5px", color: "#fff", lineHeight: 1 }}>WE ARE EYEDIA</div>
-            <div style={{ fontSize: "9px", color: "#222", letterSpacing: "1px", textTransform: "uppercase" }}>Workflow OS</div>
+            <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: "13px", letterSpacing: "2px", color: "#fff", lineHeight: 1 }}>WE ARE EYEDIA</div>
+            <div style={{ fontSize: "8px", color: "#333", letterSpacing: "1px", textTransform: "uppercase" }}>Workflow OS</div>
           </div>
         </div>
 
+        {/* Business Toggle — shown in top bar always */}
         {(role === "owner" || profile?.business === "both") && (
-          <div style={{ display: "flex", gap: "4px", background: "#0d0d0d", padding: "4px", borderRadius: "10px", border: "1px solid #111" }}>
-            {[{ id: "digital", label: "Eyedia Digital", color: "#FFD600" }, { id: "production", label: "Eyedia Production", color: "#00C9CC" }].map(b => (
+          <div className="biz-toggle" style={{ display: "flex", gap: "3px", background: "#0d0d0d", padding: "3px", borderRadius: "9px", border: "1px solid #111" }}>
+            {[{ id: "digital", label: "Digital", color: "#FFD600" }, { id: "production", label: "Production", color: "#00C9CC" }].map(b => (
               <button key={b.id} onClick={() => { setActiveBiz(b.id); setActiveView("overview"); }} style={{
-                padding: "6px 14px", borderRadius: "7px", border: "1px solid transparent", cursor: "pointer",
-                fontSize: "12px", fontWeight: 600, transition: "all 0.2s",
-                background: activeBiz === b.id ? `${b.color}15` : "transparent",
-                color: activeBiz === b.id ? b.color : "#333",
+                padding: "5px 12px", borderRadius: "6px", border: "1px solid transparent", cursor: "pointer",
+                fontSize: "11px", fontWeight: 600, transition: "all 0.2s",
+                background: activeBiz === b.id ? `${b.color}20` : "transparent",
+                color: activeBiz === b.id ? b.color : "#444",
                 borderColor: activeBiz === b.id ? `${b.color}30` : "transparent",
               }}>{b.label}</button>
             ))}
           </div>
         )}
 
-        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-            <div style={{ width: "7px", height: "7px", background: "#4ade80", borderRadius: "50%", animation: "pulse 2s infinite" }} />
-            <span style={{ fontSize: "11px", color: "#222" }}>Live</span>
+        {/* Desktop right — user info + signout */}
+        <div className="desktop-topbar-right" style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+            <div style={{ width: "6px", height: "6px", background: "#4ade80", borderRadius: "50%", animation: "pulse 2s infinite" }} />
+            <span style={{ fontSize: "10px", color: "#333" }}>Live</span>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", color: "#333", background: "#0d0d0d", padding: "5px 12px", borderRadius: "8px", border: "1px solid #111" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "11px", color: "#333", background: "#0d0d0d", padding: "4px 10px", borderRadius: "8px", border: "1px solid #111" }}>
             {profile?.full_name || user.email}
             {profile && <RolePill profile={profile} />}
           </div>
-          <button onClick={() => supabase.auth.signOut()} style={{ padding: "5px 12px", background: "transparent", border: "1px solid #1a1a1a", borderRadius: "8px", color: "#333", fontSize: "11px", cursor: "pointer" }}>Sign out</button>
+          <button onClick={() => supabase.auth.signOut()} style={{ padding: "4px 10px", background: "transparent", border: "1px solid #1a1a1a", borderRadius: "7px", color: "#333", fontSize: "10px", cursor: "pointer" }}>Sign out</button>
+        </div>
+
+        {/* Mobile right — just live dot + sign out */}
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }} className="mobile-top-right">
+          <div style={{ width: "6px", height: "6px", background: "#4ade80", borderRadius: "50%", animation: "pulse 2s infinite" }} />
+          <button onClick={() => supabase.auth.signOut()} style={{ padding: "4px 10px", background: "transparent", border: "1px solid #1a1a1a", borderRadius: "7px", color: "#444", fontSize: "10px", cursor: "pointer" }}>Out</button>
         </div>
       </div>
 
-      <div style={{ display: "flex", height: "calc(100vh - 58px)" }}>
-        {/* Sidebar */}
-        <div style={{ width: "195px", borderRight: "1px solid #111", padding: "18px 10px", flexShrink: 0, display: "flex", flexDirection: "column" }}>
+      {/* ── BODY ── */}
+      <div style={{ display: "flex", height: "calc(100vh - 54px)" }}>
+
+        {/* Desktop Sidebar */}
+        <div className="desktop-sidebar" style={{ width: "190px", borderRight: "1px solid #111", padding: "16px 10px", flexShrink: 0, display: "flex", flexDirection: "column" }}>
           {navItems.map(item => (
             <button key={item.id} onClick={() => setActiveView(item.id)} style={{
               width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
@@ -657,42 +689,73 @@ export default function EyediaApp() {
               color: activeView === item.id ? bizColor : "#333",
               fontSize: "12px", fontWeight: activeView === item.id ? 700 : 500,
               marginBottom: "2px", transition: "all 0.15s", textAlign: "left",
-            }}
-              onMouseEnter={e => { if (activeView !== item.id) e.currentTarget.style.background = "#0f0f0f"; }}
-              onMouseLeave={e => { if (activeView !== item.id) e.currentTarget.style.background = "transparent"; }}>
+            }}>
               <span style={{ display: "flex", alignItems: "center", gap: "8px" }}><span>{item.icon}</span>{item.label}</span>
               {item.alert > 0 && <span style={{ background: "#ff6b6b", color: "white", fontSize: "9px", fontWeight: 800, padding: "2px 6px", borderRadius: "10px" }}>{item.alert}</span>}
             </button>
           ))}
           <div style={{ marginTop: "auto" }}>
-            <div style={{ height: "1px", background: "#111", marginBottom: "14px" }} />
-            <div style={{ padding: "12px", background: `${bizColor}08`, border: `1px solid ${bizColor}15`, borderRadius: "10px" }}>
-              <div style={{ fontSize: "9px", color: bizColor, fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px", marginBottom: "5px" }}>Active</div>
+            <div style={{ height: "1px", background: "#111", marginBottom: "12px" }} />
+            <div style={{ padding: "10px", background: `${bizColor}08`, border: `1px solid ${bizColor}15`, borderRadius: "9px" }}>
+              <div style={{ fontSize: "9px", color: bizColor, fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px", marginBottom: "4px" }}>Active</div>
               <div style={{ fontSize: "12px", fontWeight: 700, color: "#ccc" }}>{bizName}</div>
-              <div style={{ fontSize: "10px", color: "#2a2a2a", marginTop: "3px" }}>{role === "owner" ? "Owner" : role === "manager" ? "Manager" : profile?.role}</div>
+              <div style={{ fontSize: "10px", color: "#2a2a2a", marginTop: "2px" }}>{role === "owner" ? "Owner" : role === "manager" ? "Manager" : profile?.role}</div>
             </div>
           </div>
         </div>
 
         {/* Main Content */}
-        <div style={{ flex: 1, overflow: "auto", padding: "24px" }} key={activeBiz + activeView} className="fade-in">
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "22px" }}>
-            <div>
-              <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "3px" }}>
-                <div style={{ width: "3px", height: "18px", background: bizColor, borderRadius: "2px" }} />
-                <h1 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: "20px", letterSpacing: "2px", color: "#fff" }}>
-                  {navItems.find(n => n.id === activeView)?.label.toUpperCase()}
-                </h1>
+        <div className="main-content" style={{ flex: 1, overflow: "auto", padding: "20px" }} key={activeBiz + activeView}>
+          <div className="fade-in">
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "18px" }}>
+              <div>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "2px" }}>
+                  <div style={{ width: "3px", height: "16px", background: bizColor, borderRadius: "2px" }} />
+                  <h1 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: "18px", letterSpacing: "2px", color: "#fff" }}>
+                    {navItems.find(n => n.id === activeView)?.label.toUpperCase()}
+                  </h1>
+                </div>
+                <p style={{ fontSize: "10px", color: "#333", paddingLeft: "11px" }}>{bizName}</p>
               </div>
-              <p style={{ fontSize: "11px", color: "#222", paddingLeft: "11px" }}>{bizName}</p>
             </div>
+            {activeView === "overview" && <OverviewView bizFilter={activeBiz} bizColor={bizColor} profile={profile} />}
+            {activeView === "tasks" && <TasksView bizFilter={activeBiz} profile={profile} />}
+            {activeView === "projects" && <ProjectsView bizFilter={activeBiz} bizColor={bizColor} profile={profile} />}
+            {activeView === "deliverables" && <DeliverablesView bizFilter={activeBiz} profile={profile} />}
+            {activeView === "followups" && <FollowUpsView bizFilter={activeBiz} />}
           </div>
-          {activeView === "overview" && <OverviewView bizFilter={activeBiz} bizColor={bizColor} profile={profile} />}
-          {activeView === "tasks" && <TasksView bizFilter={activeBiz} profile={profile} />}
-          {activeView === "projects" && <ProjectsView bizFilter={activeBiz} bizColor={bizColor} profile={profile} />}
-          {activeView === "deliverables" && <DeliverablesView bizFilter={activeBiz} profile={profile} />}
-          {activeView === "followups" && <FollowUpsView bizFilter={activeBiz} />}
         </div>
+      </div>
+
+      {/* ── MOBILE BOTTOM NAV ── */}
+      <div className="mobile-bottom-nav" style={{
+        position: "fixed", bottom: 0, left: 0, right: 0, height: "64px",
+        background: "#0a0a0a", borderTop: "1px solid #161616",
+        display: "flex", alignItems: "center", justifyContent: "space-around",
+        zIndex: 200, paddingBottom: "env(safe-area-inset-bottom)",
+      }}>
+        {navItems.map(item => (
+          <button key={item.id} onClick={() => setActiveView(item.id)} style={{
+            flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+            gap: "3px", border: "none", background: "transparent", cursor: "pointer",
+            padding: "8px 4px", position: "relative",
+          }}>
+            {item.alert > 0 && (
+              <span style={{ position: "absolute", top: "4px", right: "calc(50% - 14px)", background: "#ff6b6b", color: "white", fontSize: "8px", fontWeight: 800, padding: "1px 5px", borderRadius: "8px", minWidth: "14px", textAlign: "center" }}>{item.alert}</span>
+            )}
+            <span style={{ fontSize: "18px", lineHeight: 1, filter: activeView === item.id ? "none" : "grayscale(1) opacity(0.35)" }}>
+              {item.icon}
+            </span>
+            <span style={{
+              fontSize: "9px", fontWeight: activeView === item.id ? 700 : 400,
+              color: activeView === item.id ? bizColor : "#444",
+              letterSpacing: "0.3px", textTransform: "uppercase",
+            }}>{item.label}</span>
+            {activeView === item.id && (
+              <div style={{ position: "absolute", bottom: 0, width: "24px", height: "2px", background: bizColor, borderRadius: "2px 2px 0 0" }} />
+            )}
+          </button>
+        ))}
       </div>
     </div>
   );
