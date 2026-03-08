@@ -17,15 +17,25 @@ const STATUS = {
 };
 
 const ROLE_BADGE = {
-  owner:   { color: "#FFD600", label: "OWNER" },
-  manager: { color: "#00C9CC", label: "MANAGER" },
-  employee:{ color: "#888",    label: "EMPLOYEE" },
+  owner:    { color: "#FFD600", label: "OWNER" },
+  manager:  { color: "#00C9CC", label: "MANAGER" },
+  employee: { color: "#888",    label: "EMPLOYEE" },
 };
 
-function getRole(profile) {
+function getRole(profile, projectMembers) {
   if (profile?.is_owner) return "owner";
-  if (profile?.is_manager) return "manager";
+  if (projectMembers?.some(m => m.profile_id === profile?.id && m.project_role?.toLowerCase().includes("manager"))) return "manager";
   return "employee";
+}
+
+function getProjectRole(profileId, projectId, projectMembers) {
+  const m = projectMembers?.find(m => m.profile_id === profileId && m.project_id === projectId);
+  return m?.project_role || null;
+}
+
+function isManagerOnProject(profileId, projectId, projectMembers) {
+  const role = getProjectRole(profileId, projectId, projectMembers);
+  return role?.toLowerCase().includes("manager") || false;
 }
 
 function ProgressBar({ value, color }) {
@@ -47,7 +57,7 @@ function Badge({ status }) {
 }
 
 function RolePill({ profile }) {
-  const role = getRole(profile);
+  const role = getRole(profile, projectMembers);
   const rb = ROLE_BADGE[role];
   return (
     <span style={{ fontSize: "9px", color: rb.color, background: `${rb.color}15`, padding: "2px 8px", borderRadius: "10px", fontWeight: 700, letterSpacing: "0.5px" }}>{rb.label}</span>
@@ -139,7 +149,7 @@ function OverviewView({ bizFilter, bizColor, profile }) {
   const [employees, setEmployees] = useState([]);
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
-  const role = getRole(profile);
+  const role = getRole(profile, projectMembers);
 
   useEffect(() => {
     async function load() {
@@ -231,7 +241,7 @@ function TasksView({ bizFilter, profile }) {
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
   const [form, setForm] = useState({ title: "", description: "", assigned_to: "", project_id: "", deadline: "", status: "pending" });
-  const role = getRole(profile);
+  const role = getRole(profile, projectMembers);
   const canAdd = role === "owner" || role === "manager";
 
   async function load() {
@@ -354,7 +364,7 @@ function ProjectsView({ bizFilter, bizColor, profile }) {
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
   const [form, setForm] = useState({ name: "", client: "", deadline: "", progress: 0, status: "on-track" });
-  const role = getRole(profile);
+  const role = getRole(profile, projectMembers);
   const canAdd = role === "owner" || role === "manager";
 
   async function load() {
@@ -439,7 +449,7 @@ function ProjectsView({ bizFilter, bizColor, profile }) {
 function DeliverablesView({ bizFilter, profile }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
-  const role = getRole(profile);
+  const role = getRole(profile, projectMembers);
 
   async function load() {
     setLoading(true);
@@ -550,6 +560,7 @@ export default function EyediaApp() {
   const [activeView, setActiveView] = useState("overview");
   const [authChecked, setAuthChecked] = useState(false);
   const [alertCount, setAlertCount] = useState(0);
+  const [projectMembers, setProjectMembers] = useState([]);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -572,11 +583,14 @@ export default function EyediaApp() {
   async function loadProfile(uid) {
     const { data } = await supabase.from("profiles").select("*").eq("id", uid).single();
     if (data) { setProfile(data); if (data.business && data.business !== "both") setActiveBiz(data.business); }
+    // Load project memberships
+    const { data: members } = await supabase.from("project_members").select("*");
+    if (members) setProjectMembers(members);
   }
 
   const bizColor = activeBiz === "digital" ? "#FFD600" : "#00C9CC";
   const bizName = activeBiz === "digital" ? "Eyedia Digital" : "Eyedia Production";
-  const role = getRole(profile);
+  const role = getRole(profile, projectMembers);
 
   const navItems = [
     { id: "overview", label: "Overview", icon: "⬡" },
