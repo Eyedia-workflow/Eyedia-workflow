@@ -284,6 +284,12 @@ function TasksView({ bizFilter, profile, clientMembers }) {
     load();
   }
 
+  async function submitLink(id, link) {
+    if (!link) return;
+    await supabase.from("tasks").update({ delivery_link: link, status: "done" }).eq("id", id);
+    load();
+  }
+
   if (loading) return <Spinner />;
 
   return (
@@ -324,7 +330,7 @@ function TasksView({ bizFilter, profile, clientMembers }) {
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr style={{ borderBottom: "1px solid #1a1a1a" }}>
-                {["Task", "Assigned To", "Client", "Deadline", "Status", "Update"].map(h => (
+                {["Task", "Assigned To", "Client", "Deadline", "Status", "Update", "Delivery"].map(h => (
                   <th key={h} style={{ padding: "12px 16px", textAlign: "left", fontSize: "10px", color: "#333", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px", whiteSpace: "nowrap" }}>{h}</th>
                 ))}
               </tr>
@@ -347,6 +353,24 @@ function TasksView({ bizFilter, profile, clientMembers }) {
                       style={{ background: "#0d0d0d", border: "1px solid #1a1a1a", borderRadius: "6px", padding: "4px 8px", color: "#555", fontSize: "11px", cursor: "pointer", outline: "none" }}>
                       {["pending", "in-progress", "done", "overdue"].map(s => <option key={s} value={s}>{s}</option>)}
                     </select>
+                  </td>
+                  <td style={{ padding: "13px 16px", minWidth: "180px" }}>
+                    {task.delivery_link
+                      ? <a href={task.delivery_link} target="_blank" rel="noreferrer" style={{ fontSize: "11px", color: "#4ade80", fontWeight: 600, textDecoration: "none" }}>🔗 View Delivery</a>
+                      : (task.assigned_to === profile?.id || role === "owner") && (
+                        <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+                          <input
+                            placeholder="Drop link here..."
+                            onKeyDown={e => { if (e.key === "Enter") submitLink(task.id, e.target.value); }}
+                            style={{ background: "#0d0d0d", border: "1px solid #1a1a1a", borderRadius: "6px", padding: "4px 8px", color: "#e0e0e0", fontSize: "11px", outline: "none", width: "130px" }}
+                          />
+                          <button onClick={e => { const inp = e.target.previousSibling; submitLink(task.id, inp.value); }}
+                            style={{ padding: "4px 8px", background: "#4ade8015", border: "1px solid #4ade8030", borderRadius: "6px", color: "#4ade80", fontSize: "11px", cursor: "pointer", whiteSpace: "nowrap" }}>
+                            ✓
+                          </button>
+                        </div>
+                      )
+                    }
                   </td>
                 </tr>
               ))}
