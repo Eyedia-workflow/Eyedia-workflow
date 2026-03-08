@@ -573,6 +573,7 @@ function AdminView({ bizFilter, bizColor }) {
   const [newEmail, setNewEmail] = useState("");
   const [newRole, setNewRole] = useState("");
   const [newBiz, setNewBiz] = useState("digital");
+  const [newPass, setNewPass] = useState("");
 
   // Assignment form
   const [assignClient, setAssignClient] = useState("");
@@ -743,17 +744,22 @@ function AdminView({ bizFilter, bizColor }) {
                   <option value="production">Eyedia Production</option>
                 </select>
               </div>
+              <div>
+                <label style={labelStyle}>Password</label>
+                <input style={inputStyle} value={newPass} onChange={e => setNewPass(e.target.value)} placeholder="TempPass123!" />
+              </div>
             </div>
             <button style={btnStyle} onClick={async () => {
               if (!newName || !newEmail || !newRole) return flash("❌ Please fill all fields");
+              const pass = newPass || "TempPass123!";
               const res = await fetch("https://nbojegbpyzfhfeqoiebn.supabase.co/functions/v1/create-user", {
                 method: "POST",
                 headers: { "Content-Type": "application/json", "Authorization": "Bearer sb_publishable_0vLCym3N81KNa7M-GBcXLA_AnSPDis5" },
-                body: JSON.stringify({ email: newEmail, password: "TempPass123!", full_name: newName, role: newRole, business: newBiz })
+                body: JSON.stringify({ email: newEmail, password: pass, full_name: newName, role: newRole, business: newBiz })
               });
               const data = await res.json();
               if (data.error) flash("❌ " + data.error);
-              else { flash("✅ " + newName + " added! Password: TempPass123!"); setNewName(""); setNewEmail(""); setNewRole(""); loadAll(); }
+              else { flash("✅ " + newName + " added! Password: " + pass); setNewName(""); setNewEmail(""); setNewRole(""); setNewPass(""); loadAll(); }
             }}>Add Team Member</button>
           </div>
           {loading ? <Spinner /> : team.map(p => (
