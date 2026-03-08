@@ -552,6 +552,236 @@ function FollowUpsView({ bizFilter }) {
   );
 }
 
+
+// ─── Admin View (Owner only) ──────────────────────────────
+function AdminView({ bizFilter, bizColor }) {
+  const [tab, setTab] = useState("clients");
+  const [clients, setClients] = useState([]);
+  const [team, setTeam] = useState([]);
+  const [clientMembers, setClientMembers] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [msg, setMsg] = useState("");
+
+  // Client form
+  const [editClient, setEditClient] = useState(null);
+  const [clientName, setClientName] = useState("");
+  const [clientStatus, setClientStatus] = useState("on-track");
+  const [clientDeadline, setClientDeadline] = useState("");
+
+  // Employee form
+  const [newName, setNewName] = useState("");
+  const [newEmail, setNewEmail] = useState("");
+  const [newRole, setNewRole] = useState("");
+  const [newBiz, setNewBiz] = useState("digital");
+
+  // Assignment form
+  const [assignClient, setAssignClient] = useState("");
+  const [assignProfile, setAssignProfile] = useState("");
+  const [assignRole, setAssignRole] = useState("");
+
+  useEffect(() => { loadAll(); }, [bizFilter]);
+
+  async function loadAll() {
+    setLoading(true);
+    const [{ data: c }, { data: t }, { data: cm }] = await Promise.all([
+      supabase.from("clients").select("*").eq("business", bizFilter).order("name"),
+      supabase.from("profiles").select("*").eq("business", bizFilter).order("full_name"),
+      supabase.from("client_members").select("*, clients(name), profiles(full_name)"),
+    ]);
+    setClients(c || []);
+    setTeam(t || []);
+    setClientMembers(cm || []);
+    setLoading(false);
+  }
+
+  function flash(m) { setMsg(m); setTimeout(() => setMsg(""), 3000); }
+
+  // ── Clients ──
+  async function saveClient() {
+    if (!clientName) return;
+    if (editClient) {
+      await supabase.from("clients").update({ name: clientName, status: clientStatus, deadline: clientDeadline || "2026-12-31" }).eq("id", editClient);
+      flash("✅ Client updated!");
+    } else {
+      await supabase.from("clients").insert({ name: clientName, business: bizFilter, status: clientStatus, deadline: clientDeadline || "2026-12-31" });
+      flash("✅ Client added!");
+    }
+    setEditClient(null); setClientName(""); setClientStatus("on-track"); setClientDeadline("");
+    loadAll();
+  }
+
+  async function deleteClient(id) {
+    if (!window.confirm("Delete this client? All tasks and members will be removed.")) return;
+    await supabase.from("clients").delete().eq("id", id);
+    flash("🗑️ Client deleted"); loadAll();
+  }
+
+  function startEditClient(c) {
+    setEditClient(c.id); setClientName(c.name); setClientStatus(c.status); setClientDeadline(c.deadline || "");
+    setTab("clients");
+  }
+
+  // ── Team ──
+  async function deleteEmployee(id) {
+    if (!window.confirm("Remove this team member?")) return;
+    await supabase.from("profiles").delete().eq("id", id);
+    flash("🗑️ Team member removed"); loadAll();
+  }
+
+  // ── Assignments ──
+  async function assign() {
+    if (!assignClient || !assignProfile || !assignRole) return;
+    const { error } = await supabase.from("client_members").upsert({ client_id: parseInt(assignClient), profile_id: assignProfile, project_role: assignRole }, { onConflict: "client_id,profile_id" });
+    if (error) flash("❌ " + error.message);
+    else { flash("✅ Assigned!"); setAssignClient(""); setAssignProfile(""); setAssignRole(""); loadAll(); }
+  }
+
+  async function removeAssignment(id) {
+    await supabase.from("client_members").delete().eq("id", id);
+    flash("🗑️ Assignment removed"); loadAll();
+  }
+
+  const tabStyle = (t) => ({
+    padding: "8px 16px", borderRadius: "8px", border: "none", cursor: "pointer",
+    fontSize: "12px", fontWeight: 600, transition: "all 0.15s",
+    background: tab === t ? `${bizColor}20` : "transparent",
+    color: tab === t ? bizColor : "#444",
+  });
+
+  const inputStyle = { width: "100%", background: "#0d0d0d", border: "1px solid #1a1a1a", borderRadius: "8px", padding: "8px 12px", color: "#e0e0e0", fontSize: "12px", outline: "none" };
+  const labelStyle = { fontSize: "10px", color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.8px", marginBottom: "4px", display: "block" };
+  const btnStyle = { padding: "9px 20px", background: bizColor, color: "#000", border: "none", borderRadius: "8px", fontSize: "12px", fontWeight: 700, cursor: "pointer" };
+  const dangerBtn = { padding: "5px 10px", background: "transparent", border: "1px solid #ff444430", borderRadius: "6px", color: "#ff6b6b", fontSize: "11px", cursor: "pointer" };
+  const editBtn = { padding: "5px 10px", background: "transparent", border: "1px solid #1a1a1a", borderRadius: "6px", color: "#555", fontSize: "11px", cursor: "pointer" };
+  const cardStyle = { background: "#111", border: "1px solid #1a1a1a", borderRadius: "12px", padding: "16px 20px", marginBottom: "8px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", flexWrap: "wrap" };
+
+  return (
+    <div style={{ maxWidth: "800px" }}>
+      {msg && <div style={{ background: "#4ade8015", border: "1px solid #4ade8030", borderRadius: "10px", padding: "10px 16px", marginBottom: "16px", fontSize: "13px", color: "#4ade80" }}>{msg}</div>}
+
+      {/* Tabs */}
+      <div style={{ display: "flex", gap: "4px", background: "#0d0d0d", padding: "4px", borderRadius: "10px", border: "1px solid #111", marginBottom: "24px", width: "fit-content" }}>
+        {["clients", "team", "assignments"].map(t => (
+          <button key={t} style={tabStyle(t)} onClick={() => setTab(t)}>
+            {t === "clients" ? "📁 Clients" : t === "team" ? "👥 Team" : "🔗 Assign"}
+          </button>
+        ))}
+      </div>
+
+      {/* ── CLIENTS TAB ── */}
+      {tab === "clients" && (
+        <div>
+          {/* Add/Edit Client Form */}
+          <div style={{ background: "#111", border: `1px solid ${bizColor}20`, borderRadius: "12px", padding: "20px", marginBottom: "24px" }}>
+            <div style={{ fontSize: "12px", fontWeight: 700, color: bizColor, textTransform: "uppercase", letterSpacing: "1px", marginBottom: "16px" }}>
+              {editClient ? "✏️ Edit Client" : "➕ Add New Client"}
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "12px" }}>
+              <div>
+                <label style={labelStyle}>Client Name</label>
+                <input style={inputStyle} value={clientName} onChange={e => setClientName(e.target.value)} placeholder="e.g. Nike Lebanon" />
+              </div>
+              <div>
+                <label style={labelStyle}>Deadline</label>
+                <input type="date" style={inputStyle} value={clientDeadline} onChange={e => setClientDeadline(e.target.value)} />
+              </div>
+              <div>
+                <label style={labelStyle}>Status</label>
+                <select style={inputStyle} value={clientStatus} onChange={e => setClientStatus(e.target.value)}>
+                  <option value="on-track">On Track</option>
+                  <option value="at-risk">At Risk</option>
+                  <option value="critical">Critical</option>
+                  <option value="completed">Completed</option>
+                </select>
+              </div>
+            </div>
+            <div style={{ display: "flex", gap: "8px" }}>
+              <button style={btnStyle} onClick={saveClient}>{editClient ? "Update Client" : "Add Client"}</button>
+              {editClient && <button style={{ ...btnStyle, background: "transparent", border: "1px solid #1a1a1a", color: "#555" }} onClick={() => { setEditClient(null); setClientName(""); }}>Cancel</button>}
+            </div>
+          </div>
+
+          {/* Clients List */}
+          {loading ? <Spinner /> : clients.map(c => (
+            <div key={c.id} style={cardStyle}>
+              <div>
+                <div style={{ fontSize: "14px", fontWeight: 700, color: "#e0e0e0" }}>{c.name}</div>
+                <div style={{ fontSize: "11px", color: "#333", marginTop: "3px" }}>Deadline: {c.deadline} · Status: {c.status}</div>
+              </div>
+              <div style={{ display: "flex", gap: "8px" }}>
+                <button style={editBtn} onClick={() => startEditClient(c)}>✏️ Edit</button>
+                <button style={dangerBtn} onClick={() => deleteClient(c.id)}>🗑️ Delete</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* ── TEAM TAB ── */}
+      {tab === "team" && (
+        <div>
+          <div style={{ background: "#111", border: "1px solid #1a1a1a", borderRadius: "12px", padding: "16px 20px", marginBottom: "16px", fontSize: "12px", color: "#444" }}>
+            💡 To add new team members, use Supabase Auth → Add User. They will appear here automatically.
+          </div>
+          {loading ? <Spinner /> : team.map(p => (
+            <div key={p.id} style={cardStyle}>
+              <div>
+                <div style={{ fontSize: "13px", fontWeight: 700, color: "#e0e0e0" }}>{p.full_name}</div>
+                <div style={{ fontSize: "11px", color: "#333", marginTop: "3px" }}>{p.role} · {p.business}</div>
+                <div style={{ fontSize: "11px", color: "#222", marginTop: "2px" }}>{clientMembers.filter(m => m.profile_id === p.id).map(m => m.clients?.name).join(", ") || "No clients assigned"}</div>
+              </div>
+              <button style={dangerBtn} onClick={() => deleteEmployee(p.id)}>🗑️ Remove</button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* ── ASSIGNMENTS TAB ── */}
+      {tab === "assignments" && (
+        <div>
+          {/* Assign Form */}
+          <div style={{ background: "#111", border: `1px solid ${bizColor}20`, borderRadius: "12px", padding: "20px", marginBottom: "24px" }}>
+            <div style={{ fontSize: "12px", fontWeight: 700, color: bizColor, textTransform: "uppercase", letterSpacing: "1px", marginBottom: "16px" }}>🔗 Assign Team Member to Client</div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "12px" }}>
+              <div>
+                <label style={labelStyle}>Client</label>
+                <select style={inputStyle} value={assignClient} onChange={e => setAssignClient(e.target.value)}>
+                  <option value="">Select client...</option>
+                  {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
+              </div>
+              <div>
+                <label style={labelStyle}>Team Member</label>
+                <select style={inputStyle} value={assignProfile} onChange={e => setAssignProfile(e.target.value)}>
+                  <option value="">Select person...</option>
+                  {team.map(p => <option key={p.id} value={p.id}>{p.full_name}</option>)}
+                </select>
+              </div>
+              <div>
+                <label style={labelStyle}>Role on this Client</label>
+                <input style={inputStyle} value={assignRole} onChange={e => setAssignRole(e.target.value)} placeholder="e.g. Account Manager" />
+              </div>
+            </div>
+            <button style={btnStyle} onClick={assign}>Assign</button>
+          </div>
+
+          {/* Current Assignments */}
+          <div style={{ fontSize: "11px", color: "#444", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px", marginBottom: "12px" }}>Current Assignments</div>
+          {loading ? <Spinner /> : clientMembers.filter(m => clients.find(c => c.id === m.client_id)).map(m => (
+            <div key={m.id} style={cardStyle}>
+              <div>
+                <div style={{ fontSize: "13px", fontWeight: 600, color: "#e0e0e0" }}>{m.profiles?.full_name}</div>
+                <div style={{ fontSize: "11px", color: "#333", marginTop: "3px" }}>{m.clients?.name} · <span style={{ color: bizColor }}>{m.project_role}</span></div>
+              </div>
+              <button style={dangerBtn} onClick={() => removeAssignment(m.id)}>🗑️ Remove</button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Main App ─────────────────────────────────────────────
 export default function EyediaApp() {
   const [user, setUser] = useState(null);
@@ -598,6 +828,7 @@ export default function EyediaApp() {
     { id: "clients", label: "Clients", icon: "◻" },
     { id: "deliverables", label: "Deliverables", icon: "◷" },
     ...(role === "owner" ? [{ id: "followups", label: "Follow-ups", icon: "⚡", alert: alertCount }] : []),
+    ...(role === "owner" ? [{ id: "admin", label: "Admin", icon: "⚙" }] : []),
   ];
 
   if (!authChecked) return <div style={{ background: "#080808", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", color: "#333", fontFamily: "sans-serif" }}>Loading...</div>;
@@ -731,6 +962,7 @@ export default function EyediaApp() {
             {activeView === "clients" && <ClientsView bizFilter={activeBiz} bizColor={bizColor} profile={profile} clientMembers={clientMembers} />}
             {activeView === "deliverables" && <DeliverablesView bizFilter={activeBiz} profile={profile} clientMembers={clientMembers} />}
             {activeView === "followups" && <FollowUpsView bizFilter={activeBiz} profile={profile} clientMembers={clientMembers} />}
+            {activeView === "admin" && <AdminView bizFilter={activeBiz} bizColor={bizColor} />}
           </div>
         </div>
       </div>
