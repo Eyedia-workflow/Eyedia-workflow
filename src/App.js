@@ -726,11 +726,11 @@ export default function EyediaApp() {
                 <p style={{ fontSize: "10px", color: "#333", paddingLeft: "11px" }}>{bizName}</p>
               </div>
             </div>
-            {activeView === "overview" && <OverviewView bizFilter={activeBiz} bizColor={bizColor} profile={profile} clientMembers={projectMembers} />}
-            {activeView === "tasks" && <TasksView bizFilter={activeBiz} profile={profile} clientMembers={projectMembers} />}
-            {activeView === "clients" && <ClientsView bizFilter={activeBiz} bizColor={bizColor} profile={profile} clientMembers={projectMembers} />}
-            {activeView === "deliverables" && <DeliverablesView bizFilter={activeBiz} profile={profile} clientMembers={projectMembers} />}
-            {activeView === "followups" && <FollowUpsView bizFilter={activeBiz} profile={profile} clientMembers={projectMembers} />}
+            {activeView === "overview" && <OverviewView bizFilter={activeBiz} bizColor={bizColor} profile={profile} clientMembers={clientMembers} />}
+            {activeView === "tasks" && <TasksView bizFilter={activeBiz} profile={profile} clientMembers={clientMembers} />}
+            {activeView === "clients" && <ClientsView bizFilter={activeBiz} bizColor={bizColor} profile={profile} clientMembers={clientMembers} />}
+            {activeView === "deliverables" && <DeliverablesView bizFilter={activeBiz} profile={profile} clientMembers={clientMembers} />}
+            {activeView === "followups" && <FollowUpsView bizFilter={activeBiz} profile={profile} clientMembers={clientMembers} />}
           </div>
         </div>
       </div>
