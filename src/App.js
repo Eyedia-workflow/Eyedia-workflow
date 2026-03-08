@@ -145,7 +145,7 @@ function AuthScreen({ onLogin }) {
 }
 
 // ─── Overview ─────────────────────────────────────────────
-function OverviewView({ bizFilter, bizColor, profile }) {
+function OverviewView({ bizFilter, bizColor, profile, clientMembers }) {
   const [employees, setEmployees] = useState([]);
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -234,7 +234,7 @@ function OverviewView({ bizFilter, bizColor, profile }) {
 }
 
 // ─── Tasks View ───────────────────────────────────────────
-function TasksView({ bizFilter, profile }) {
+function TasksView({ bizFilter, profile, clientMembers }) {
   const [tasks, setTasks] = useState([]);
   const [clients, setClients] = useState([]);
   const [employees, setEmployees] = useState([]);
@@ -359,7 +359,7 @@ function TasksView({ bizFilter, profile }) {
 }
 
 // ─── Clients View ────────────────────────────────────────
-function ClientsView({ bizFilter, bizColor, profile }) {
+function ClientsView({ bizFilter, bizColor, profile, clientMembers }) {
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
@@ -446,7 +446,7 @@ function ClientsView({ bizFilter, bizColor, profile }) {
 }
 
 // ─── Deliverables View ────────────────────────────────────
-function DeliverablesView({ bizFilter, profile }) {
+function DeliverablesView({ bizFilter, profile, clientMembers }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const role = getRole(profile, clientMembers);
@@ -726,11 +726,11 @@ export default function EyediaApp() {
                 <p style={{ fontSize: "10px", color: "#333", paddingLeft: "11px" }}>{bizName}</p>
               </div>
             </div>
-            {activeView === "overview" && <OverviewView bizFilter={activeBiz} bizColor={bizColor} profile={profile} />}
-            {activeView === "tasks" && <TasksView bizFilter={activeBiz} profile={profile} />}
-            {activeView === "clients" && <ClientsView bizFilter={activeBiz} bizColor={bizColor} profile={profile} />}
-            {activeView === "deliverables" && <DeliverablesView bizFilter={activeBiz} profile={profile} />}
-            {activeView === "followups" && <FollowUpsView bizFilter={activeBiz} />}
+            {activeView === "overview" && <OverviewView bizFilter={activeBiz} bizColor={bizColor} profile={profile} clientMembers={projectMembers} />}
+            {activeView === "tasks" && <TasksView bizFilter={activeBiz} profile={profile} clientMembers={projectMembers} />}
+            {activeView === "clients" && <ClientsView bizFilter={activeBiz} bizColor={bizColor} profile={profile} clientMembers={projectMembers} />}
+            {activeView === "deliverables" && <DeliverablesView bizFilter={activeBiz} profile={profile} clientMembers={projectMembers} />}
+            {activeView === "followups" && <FollowUpsView bizFilter={activeBiz} profile={profile} clientMembers={projectMembers} />}
           </div>
         </div>
       </div>
