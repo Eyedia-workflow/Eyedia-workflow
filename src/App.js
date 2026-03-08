@@ -22,19 +22,19 @@ const ROLE_BADGE = {
   employee: { color: "#888",    label: "EMPLOYEE" },
 };
 
-function getRole(profile, projectMembers) {
+function getRole(profile, clientMembers) {
   if (profile?.is_owner) return "owner";
-  if (projectMembers?.some(m => m.profile_id === profile?.id && m.project_role?.toLowerCase().includes("manager"))) return "manager";
+  if (clientMembers?.some(m => m.profile_id === profile?.id && m.client_role?.toLowerCase().includes("manager"))) return "manager";
   return "employee";
 }
 
-function getProjectRole(profileId, projectId, projectMembers) {
-  const m = projectMembers?.find(m => m.profile_id === profileId && m.project_id === projectId);
-  return m?.project_role || null;
+function getClientRole(profileId, clientId, clientMembers) {
+  const m = clientMembers?.find(m => m.profile_id === profileId && m.client_id === clientId);
+  return m?.client_role || null;
 }
 
-function isManagerOnProject(profileId, projectId, projectMembers) {
-  const role = getProjectRole(profileId, projectId, projectMembers);
+function isManagerOnClient(profileId, clientId, clientMembers) {
+  const role = getClientRole(profileId, clientId, clientMembers);
   return role?.toLowerCase().includes("manager") || false;
 }
 
@@ -57,7 +57,7 @@ function Badge({ status }) {
 }
 
 function RolePill({ profile }) {
-  const role = getRole(profile, projectMembers);
+  const role = getRole(profile, clientMembers);
   const rb = ROLE_BADGE[role];
   return (
     <span style={{ fontSize: "9px", color: rb.color, background: `${rb.color}15`, padding: "2px 8px", borderRadius: "10px", fontWeight: 700, letterSpacing: "0.5px" }}>{rb.label}</span>
@@ -147,25 +147,25 @@ function AuthScreen({ onLogin }) {
 // ─── Overview ─────────────────────────────────────────────
 function OverviewView({ bizFilter, bizColor, profile }) {
   const [employees, setEmployees] = useState([]);
-  const [projects, setProjects] = useState([]);
+  const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
-  const role = getRole(profile, projectMembers);
+  const role = getRole(profile, clientMembers);
 
   useEffect(() => {
     async function load() {
       setLoading(true);
-      let projQuery = supabase.from("projects").select("*").eq("business", bizFilter);
+      let projQuery = supabase.from("clients").select("*").eq("business", bizFilter);
       if (role === "manager") {
-        const { data: mp } = await supabase.from("manager_projects").select("project_id").eq("manager_id", profile.id);
-        const ids = (mp || []).map(r => r.project_id);
-        if (ids.length) projQuery = projQuery.in("id", ids); else { setProjects([]); setLoading(false); return; }
+        const { data: mp } = await supabase.from("client_members").select("client_id").eq("manager_id", profile.id);
+        const ids = (mp || []).map(r => r.client_id);
+        if (ids.length) projQuery = projQuery.in("id", ids); else { setClients([]); setLoading(false); return; }
       }
       const [{ data: emps }, { data: projs }] = await Promise.all([
         supabase.from("profiles").select("*").eq("business", bizFilter),
         projQuery,
       ]);
       setEmployees(emps || []);
-      setProjects(projs || []);
+      setClients(projs || []);
       setLoading(false);
     }
     load();
@@ -178,9 +178,9 @@ function OverviewView({ bizFilter, bizColor, profile }) {
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px", marginBottom: "24px" }}>
         {[
           { label: "Team Members", value: employees.length, sub: `in ${bizFilter}`, color: bizColor, icon: "◈" },
-          { label: "Active Projects", value: projects.length, sub: `${projects.filter(p => p.status === "completed").length} completed`, color: "#4ade80", icon: "◻" },
-          { label: "Critical", value: projects.filter(p => p.status === "critical").length, sub: "need attention", color: "#ff6b6b", icon: "⚠" },
-          { label: "On Track", value: projects.filter(p => p.status === "on-track").length, sub: "running smoothly", color: "#888", icon: "✦" },
+          { label: "Active Clients", value: clients.length, sub: `${clients.filter(p => p.status === "completed").length} completed`, color: "#4ade80", icon: "◻" },
+          { label: "Critical", value: clients.filter(p => p.status === "critical").length, sub: "need attention", color: "#ff6b6b", icon: "⚠" },
+          { label: "On Track", value: clients.filter(p => p.status === "on-track").length, sub: "running smoothly", color: "#888", icon: "✦" },
         ].map((s, i) => (
           <div key={i} style={{ background: "#111", border: "1px solid #1a1a1a", borderRadius: "14px", padding: "18px 20px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "10px" }}>
@@ -210,9 +210,9 @@ function OverviewView({ bizFilter, bizColor, profile }) {
         </div>
         <div style={{ background: "#111", border: "1px solid #1a1a1a", borderRadius: "14px", padding: "20px" }}>
           <div style={{ fontSize: "10px", color: "#333", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1.2px", marginBottom: "16px" }}>
-            {role === "manager" ? "Your Projects" : "All Projects"}
+            {role === "manager" ? "Your Clients" : "All Clients"}
           </div>
-          {projects.length === 0 ? <Empty msg="No projects yet" /> : projects.map(p => {
+          {clients.length === 0 ? <Empty msg="No clients yet" /> : clients.map(p => {
             const barColor = p.status === "critical" ? "#ff6b6b" : p.status === "at-risk" ? "#00C9CC" : bizColor;
             return (
               <div key={p.id} style={{ marginBottom: "16px" }}>
@@ -236,26 +236,26 @@ function OverviewView({ bizFilter, bizColor, profile }) {
 // ─── Tasks View ───────────────────────────────────────────
 function TasksView({ bizFilter, profile }) {
   const [tasks, setTasks] = useState([]);
-  const [projects, setProjects] = useState([]);
+  const [clients, setClients] = useState([]);
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
-  const [form, setForm] = useState({ title: "", description: "", assigned_to: "", project_id: "", deadline: "", status: "pending" });
-  const role = getRole(profile, projectMembers);
+  const [form, setForm] = useState({ title: "", description: "", assigned_to: "", client_id: "", deadline: "", status: "pending" });
+  const role = getRole(profile, clientMembers);
   const canAdd = role === "owner" || role === "manager";
 
   async function load() {
     setLoading(true);
     let projIds = null;
     if (role === "manager") {
-      const { data: mp } = await supabase.from("manager_projects").select("project_id").eq("manager_id", profile.id);
-      projIds = (mp || []).map(r => r.project_id);
+      const { data: mp } = await supabase.from("client_members").select("client_id").eq("manager_id", profile.id);
+      projIds = (mp || []).map(r => r.client_id);
     }
-    let taskQuery = supabase.from("tasks").select("*, profiles(full_name), projects(name)").eq("business", bizFilter);
+    let taskQuery = supabase.from("tasks").select("*, profiles(full_name), clients(name)").eq("business", bizFilter);
     if (role === "employee") taskQuery = taskQuery.eq("assigned_to", profile.id);
-    else if (role === "manager" && projIds?.length) taskQuery = taskQuery.in("project_id", projIds);
+    else if (role === "manager" && projIds?.length) taskQuery = taskQuery.in("client_id", projIds);
 
-    let projQuery = supabase.from("projects").select("id, name").eq("business", bizFilter);
+    let projQuery = supabase.from("clients").select("id, name").eq("business", bizFilter);
     if (role === "manager" && projIds?.length) projQuery = projQuery.in("id", projIds);
 
     const [{ data: t }, { data: p }, { data: e }] = await Promise.all([
@@ -264,7 +264,7 @@ function TasksView({ bizFilter, profile }) {
       supabase.from("profiles").select("id, full_name").eq("business", bizFilter),
     ]);
     setTasks(t || []);
-    setProjects(p || []);
+    setClients(p || []);
     setEmployees(e || []);
     setLoading(false);
   }
@@ -272,10 +272,10 @@ function TasksView({ bizFilter, profile }) {
   useEffect(() => { load(); }, [bizFilter]);
 
   async function addTask() {
-    if (!form.title || !form.project_id) return;
+    if (!form.title || !form.client_id) return;
     await supabase.from("tasks").insert([{ ...form, business: bizFilter }]);
     setShowAdd(false);
-    setForm({ title: "", description: "", assigned_to: "", project_id: "", deadline: "", status: "pending" });
+    setForm({ title: "", description: "", assigned_to: "", client_id: "", deadline: "", status: "pending" });
     load();
   }
 
@@ -306,8 +306,8 @@ function TasksView({ bizFilter, profile }) {
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "10px" }}>
             <Select label="Assign To" value={form.assigned_to} onChange={v => setForm({ ...form, assigned_to: v })}
               options={[{ value: "", label: "Select employee" }, ...employees.map(e => ({ value: e.id, label: e.full_name }))]} />
-            <Select label="Project" value={form.project_id} onChange={v => setForm({ ...form, project_id: v })}
-              options={[{ value: "", label: "Select project" }, ...projects.map(p => ({ value: p.id, label: p.name }))]} />
+            <Select label="Client" value={form.client_id} onChange={v => setForm({ ...form, client_id: v })}
+              options={[{ value: "", label: "Select client" }, ...clients.map(p => ({ value: p.id, label: p.name }))]} />
           </div>
           <div style={{ marginBottom: "14px" }}>
             <Input label="Description (optional)" value={form.description} onChange={v => setForm({ ...form, description: v })} placeholder="Brief description..." />
@@ -324,7 +324,7 @@ function TasksView({ bizFilter, profile }) {
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr style={{ borderBottom: "1px solid #1a1a1a" }}>
-                {["Task", "Assigned To", "Project", "Deadline", "Status", "Update"].map(h => (
+                {["Task", "Assigned To", "Client", "Deadline", "Status", "Update"].map(h => (
                   <th key={h} style={{ padding: "12px 16px", textAlign: "left", fontSize: "10px", color: "#333", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px", whiteSpace: "nowrap" }}>{h}</th>
                 ))}
               </tr>
@@ -339,7 +339,7 @@ function TasksView({ bizFilter, profile }) {
                     {task.description && <div style={{ fontSize: "11px", color: "#2a2a2a", marginTop: "2px" }}>{task.description}</div>}
                   </td>
                   <td style={{ padding: "13px 16px", fontSize: "12px", color: "#555" }}>{task.profiles?.full_name || "—"}</td>
-                  <td style={{ padding: "13px 16px", fontSize: "12px", color: "#555" }}>{task.projects?.name || "—"}</td>
+                  <td style={{ padding: "13px 16px", fontSize: "12px", color: "#555" }}>{task.clients?.name || "—"}</td>
                   <td style={{ padding: "13px 16px", fontSize: "12px", color: "#555", whiteSpace: "nowrap" }}>{task.deadline || "—"}</td>
                   <td style={{ padding: "13px 16px" }}><Badge status={task.status} /></td>
                   <td style={{ padding: "13px 16px" }}>
@@ -358,35 +358,35 @@ function TasksView({ bizFilter, profile }) {
   );
 }
 
-// ─── Projects View ────────────────────────────────────────
-function ProjectsView({ bizFilter, bizColor, profile }) {
-  const [projects, setProjects] = useState([]);
+// ─── Clients View ────────────────────────────────────────
+function ClientsView({ bizFilter, bizColor, profile }) {
+  const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
   const [form, setForm] = useState({ name: "", client: "", deadline: "", progress: 0, status: "on-track" });
-  const role = getRole(profile, projectMembers);
+  const role = getRole(profile, clientMembers);
   const canAdd = role === "owner" || role === "manager";
 
   async function load() {
     setLoading(true);
-    let query = supabase.from("projects").select("*").eq("business", bizFilter);
+    let query = supabase.from("clients").select("*").eq("business", bizFilter);
     if (role === "manager") {
-      const { data: mp } = await supabase.from("manager_projects").select("project_id").eq("manager_id", profile.id);
-      const ids = (mp || []).map(r => r.project_id);
-      if (ids.length) query = query.in("id", ids); else { setProjects([]); setLoading(false); return; }
+      const { data: mp } = await supabase.from("client_members").select("client_id").eq("manager_id", profile.id);
+      const ids = (mp || []).map(r => r.client_id);
+      if (ids.length) query = query.in("id", ids); else { setClients([]); setLoading(false); return; }
     }
     const { data } = await query;
-    setProjects(data || []);
+    setClients(data || []);
     setLoading(false);
   }
 
   useEffect(() => { load(); }, [bizFilter]);
 
-  async function addProject() {
+  async function addClient() {
     if (!form.name || !form.client) return;
-    const { data } = await supabase.from("projects").insert([{ ...form, business: bizFilter }]).select().single();
+    const { data } = await supabase.from("clients").insert([{ ...form, business: bizFilter }]).select().single();
     if (data && role === "manager") {
-      await supabase.from("manager_projects").insert([{ manager_id: profile.id, project_id: data.id }]);
+      await supabase.from("client_members").insert([{ manager_id: profile.id, client_id: data.id }]);
     }
     setShowAdd(false);
     setForm({ name: "", client: "", deadline: "", progress: 0, status: "on-track" });
@@ -399,26 +399,26 @@ function ProjectsView({ bizFilter, bizColor, profile }) {
     <div>
       {canAdd && (
         <div style={{ marginBottom: "16px", display: "flex", justifyContent: "flex-end" }}>
-          <button onClick={() => setShowAdd(!showAdd)} style={{ padding: "8px 18px", background: "#FFD60015", border: "1px solid #FFD60030", borderRadius: "10px", color: "#FFD600", fontSize: "12px", fontWeight: 600, cursor: "pointer" }}>+ Add Project</button>
+          <button onClick={() => setShowAdd(!showAdd)} style={{ padding: "8px 18px", background: "#FFD60015", border: "1px solid #FFD60030", borderRadius: "10px", color: "#FFD600", fontSize: "12px", fontWeight: 600, cursor: "pointer" }}>+ Add Client</button>
         </div>
       )}
       {showAdd && (
         <div style={{ background: "#111", border: "1px solid #FFD60030", borderRadius: "14px", padding: "20px", marginBottom: "16px" }}>
-          <div style={{ fontSize: "12px", color: "#FFD600", fontWeight: 700, marginBottom: "14px" }}>New Project</div>
+          <div style={{ fontSize: "12px", color: "#FFD600", fontWeight: 700, marginBottom: "14px" }}>New Client</div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "10px", marginBottom: "14px" }}>
-            <Input label="Project Name" value={form.name} onChange={v => setForm({ ...form, name: v })} />
+            <Input label="Client Name" value={form.name} onChange={v => setForm({ ...form, name: v })} />
             <Input label="Client" value={form.client} onChange={v => setForm({ ...form, client: v })} />
             <Input label="Deadline" value={form.deadline} onChange={v => setForm({ ...form, deadline: v })} type="date" />
           </div>
           <div style={{ display: "flex", gap: "8px" }}>
-            <button onClick={addProject} style={{ padding: "8px 18px", background: "#FFD600", border: "none", borderRadius: "8px", color: "#000", fontSize: "12px", fontWeight: 700, cursor: "pointer" }}>Save</button>
+            <button onClick={addClient} style={{ padding: "8px 18px", background: "#FFD600", border: "none", borderRadius: "8px", color: "#000", fontSize: "12px", fontWeight: 700, cursor: "pointer" }}>Save</button>
             <button onClick={() => setShowAdd(false)} style={{ padding: "8px 18px", background: "transparent", border: "1px solid #1a1a1a", borderRadius: "8px", color: "#333", fontSize: "12px", cursor: "pointer" }}>Cancel</button>
           </div>
         </div>
       )}
-      {projects.length === 0 ? <Empty msg="No projects yet." /> : (
+      {clients.length === 0 ? <Empty msg="No clients yet." /> : (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: "14px" }}>
-          {projects.map(p => {
+          {clients.map(p => {
             const barColor = p.status === "critical" ? "#ff6b6b" : p.status === "at-risk" ? "#00C9CC" : bizColor;
             return (
               <div key={p.id} style={{ background: "#111", border: "1px solid #1a1a1a", borderRadius: "14px", padding: "20px", transition: "border-color 0.2s, transform 0.2s" }}
@@ -449,15 +449,15 @@ function ProjectsView({ bizFilter, bizColor, profile }) {
 function DeliverablesView({ bizFilter, profile }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
-  const role = getRole(profile, projectMembers);
+  const role = getRole(profile, clientMembers);
 
   async function load() {
     setLoading(true);
     let query = supabase.from("deliverables").select("*, profiles(full_name)").eq("business", bizFilter);
     if (role === "manager") {
-      const { data: mp } = await supabase.from("manager_projects").select("project_id").eq("manager_id", profile.id);
-      const ids = (mp || []).map(r => r.project_id);
-      if (ids.length) query = query.in("project_id", ids); else { setItems([]); setLoading(false); return; }
+      const { data: mp } = await supabase.from("client_members").select("client_id").eq("manager_id", profile.id);
+      const ids = (mp || []).map(r => r.client_id);
+      if (ids.length) query = query.in("client_id", ids); else { setItems([]); setLoading(false); return; }
     }
     const { data } = await query;
     setItems(data || []);
@@ -560,7 +560,7 @@ export default function EyediaApp() {
   const [activeView, setActiveView] = useState("overview");
   const [authChecked, setAuthChecked] = useState(false);
   const [alertCount, setAlertCount] = useState(0);
-  const [projectMembers, setProjectMembers] = useState([]);
+  const [clientMembers, setClientMembers] = useState([]);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -583,19 +583,19 @@ export default function EyediaApp() {
   async function loadProfile(uid) {
     const { data } = await supabase.from("profiles").select("*").eq("id", uid).single();
     if (data) { setProfile(data); if (data.business && data.business !== "both") setActiveBiz(data.business); }
-    // Load project memberships
-    const { data: members } = await supabase.from("project_members").select("*");
-    if (members) setProjectMembers(members);
+    // Load client memberships
+    const { data: members } = await supabase.from("client_members").select("*");
+    if (members) setClientMembers(members);
   }
 
   const bizColor = activeBiz === "digital" ? "#FFD600" : "#00C9CC";
   const bizName = activeBiz === "digital" ? "Eyedia Digital" : "Eyedia Production";
-  const role = getRole(profile, projectMembers);
+  const role = getRole(profile, clientMembers);
 
   const navItems = [
     { id: "overview", label: "Overview", icon: "⬡" },
     { id: "tasks", label: role === "employee" ? "My Tasks" : "Tasks", icon: "◈" },
-    { id: "projects", label: "Projects", icon: "◻" },
+    { id: "clients", label: "Clients", icon: "◻" },
     { id: "deliverables", label: "Deliverables", icon: "◷" },
     ...(role === "owner" ? [{ id: "followups", label: "Follow-ups", icon: "⚡", alert: alertCount }] : []),
   ];
@@ -608,7 +608,7 @@ export default function EyediaApp() {
   const navIcons = {
     overview:     "⬡",
     tasks:        "◈",
-    projects:     "◻",
+    clients:     "◻",
     deliverables: "◷",
     followups:    "⚡",
   };
@@ -728,7 +728,7 @@ export default function EyediaApp() {
             </div>
             {activeView === "overview" && <OverviewView bizFilter={activeBiz} bizColor={bizColor} profile={profile} />}
             {activeView === "tasks" && <TasksView bizFilter={activeBiz} profile={profile} />}
-            {activeView === "projects" && <ProjectsView bizFilter={activeBiz} bizColor={bizColor} profile={profile} />}
+            {activeView === "clients" && <ClientsView bizFilter={activeBiz} bizColor={bizColor} profile={profile} />}
             {activeView === "deliverables" && <DeliverablesView bizFilter={activeBiz} profile={profile} />}
             {activeView === "followups" && <FollowUpsView bizFilter={activeBiz} />}
           </div>
