@@ -720,8 +720,41 @@ function AdminView({ bizFilter, bizColor }) {
       {/* ── TEAM TAB ── */}
       {tab === "team" && (
         <div>
-          <div style={{ background: "#111", border: "1px solid #1a1a1a", borderRadius: "12px", padding: "16px 20px", marginBottom: "16px", fontSize: "12px", color: "#444" }}>
-            💡 To add new team members, use Supabase Auth → Add User. They will appear here automatically.
+          {/* Add Team Member Form */}
+          <div style={{ background: "#111", border: `1px solid ${bizColor}20`, borderRadius: "12px", padding: "20px", marginBottom: "24px" }}>
+            <div style={{ fontSize: "12px", fontWeight: 700, color: bizColor, textTransform: "uppercase", letterSpacing: "1px", marginBottom: "16px" }}>➕ Add Team Member</div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "12px" }}>
+              <div>
+                <label style={labelStyle}>Full Name</label>
+                <input style={inputStyle} value={newName} onChange={e => setNewName(e.target.value)} placeholder="e.g. Sarah Khoury" />
+              </div>
+              <div>
+                <label style={labelStyle}>Email</label>
+                <input style={inputStyle} value={newEmail} onChange={e => setNewEmail(e.target.value)} placeholder="sarah@eyedia.com" />
+              </div>
+              <div>
+                <label style={labelStyle}>Job Title</label>
+                <input style={inputStyle} value={newRole} onChange={e => setNewRole(e.target.value)} placeholder="e.g. Graphic Designer" />
+              </div>
+              <div>
+                <label style={labelStyle}>Business</label>
+                <select style={inputStyle} value={newBiz} onChange={e => setNewBiz(e.target.value)}>
+                  <option value="digital">Eyedia Digital</option>
+                  <option value="production">Eyedia Production</option>
+                </select>
+              </div>
+            </div>
+            <button style={btnStyle} onClick={async () => {
+              if (!newName || !newEmail || !newRole) return flash("❌ Please fill all fields");
+              const res = await fetch("https://nbojegbpyzfhfeqoiebn.supabase.co/functions/v1/create-user", {
+                method: "POST",
+                headers: { "Content-Type": "application/json", "Authorization": "Bearer sb_publishable_0vLCym3N81KNa7M-GBcXLA_AnSPDis5" },
+                body: JSON.stringify({ email: newEmail, password: "TempPass123!", full_name: newName, role: newRole, business: newBiz })
+              });
+              const data = await res.json();
+              if (data.error) flash("❌ " + data.error);
+              else { flash("✅ " + newName + " added! Password: TempPass123!"); setNewName(""); setNewEmail(""); setNewRole(""); loadAll(); }
+            }}>Add Team Member</button>
           </div>
           {loading ? <Spinner /> : team.map(p => (
             <div key={p.id} style={cardStyle}>
