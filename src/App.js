@@ -903,7 +903,7 @@ export default function EyediaApp() {
     ...(role === "owner" ? [{ id: "admin", label: "Admin", icon: "⚙" }] : []),
   ];
 
-  if (!authChecked) return <div style={{ background: "#080808", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", color: "#333", fontFamily: "sans-serif" }}>Loading...</div>;
+  if (!authChecked || (user && !profile)) return <div style={{ background: "#080808", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", color: "#333", fontFamily: "sans-serif" }}>Loading...</div>;
   if (!user) return <AuthScreen onLogin={(u) => { setUser(u); loadProfile(u.id); }} />;
 
   const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
