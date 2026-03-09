@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const SUPABASE_URL = "https://nbojegbpyzfhfeqoiebn.supabase.co";
-const SUPABASE_KEY = "sb_publishable_0vLCym3N81KNa7M-GBcXLA_AnSPDis5";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ib2plZ2JweXpmaGZlcW9pZWJuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5OTQ2NjQsImV4cCI6MjA4ODU3MDY2NH0.TtHMGuKqpSpE8sPaSLVhdXi5yKTJEaWsMx7cdqTGpek";
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const STATUS = {
@@ -776,14 +776,12 @@ function AdminView({ bizFilter, bizColor }) {
             <button style={btnStyle} onClick={async () => {
               if (!newName || !newEmail || !newRole) return flash("❌ Please fill all fields");
               const pass = newPass || "TempPass123!";
-              const { data: { session } } = await supabase.auth.getSession();
-              const token = session?.access_token || "sb_publishable_0vLCym3N81KNa7M-GBcXLA_AnSPDis5";
               const res = await fetch("https://nbojegbpyzfhfeqoiebn.supabase.co/functions/v1/create-user", {
                 method: "POST",
                 headers: { 
                   "Content-Type": "application/json", 
-                  "Authorization": `Bearer ${token}`,
-                  "apikey": "sb_publishable_0vLCym3N81KNa7M-GBcXLA_AnSPDis5"
+                  "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ib2plZ2JweXpmaGZlcW9pZWJuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5OTQ2NjQsImV4cCI6MjA4ODU3MDY2NH0.TtHMGuKqpSpE8sPaSLVhdXi5yKTJEaWsMx7cdqTGpek",
+                  "apikey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ib2plZ2JweXpmaGZlcW9pZWJuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5OTQ2NjQsImV4cCI6MjA4ODU3MDY2NH0.TtHMGuKqpSpE8sPaSLVhdXi5yKTJEaWsMx7cdqTGpek"
                 },
                 body: JSON.stringify({ email: newEmail, password: pass, full_name: newName, role: newRole, business: newBiz })
               });
