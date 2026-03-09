@@ -274,6 +274,18 @@ function TasksView({ bizFilter, profile, clientMembers }) {
 
   useEffect(() => { load(); }, [bizFilter]);
 
+  function autoStatus(task) {
+    if (task.status === "done") return "done";
+    if (!task.deadline) return task.status;
+    const today = new Date();
+    const deadline = new Date(task.deadline);
+    const daysLeft = Math.ceil((deadline - today) / (1000 * 60 * 60 * 24));
+    if (daysLeft < 0) return "overdue";
+    if (daysLeft <= 3) return "critical";
+    if (daysLeft <= 7) return "at-risk";
+    return task.status === "in-progress" ? "in-progress" : "on-track";
+  }
+
   async function addTask() {
     if (!form.title || !form.client_id) return;
     await supabase.from("tasks").insert([{ ...form, business: bizFilter }]);
@@ -350,7 +362,7 @@ function TasksView({ bizFilter, profile, clientMembers }) {
                   <td style={{ padding: "13px 16px", fontSize: "12px", color: "#555" }}>{task.profiles?.full_name || "—"}</td>
                   <td style={{ padding: "13px 16px", fontSize: "12px", color: "#555" }}>{task.clients?.name || "—"}</td>
                   <td style={{ padding: "13px 16px", fontSize: "12px", color: "#555", whiteSpace: "nowrap" }}>{task.deadline || "—"}</td>
-                  <td style={{ padding: "13px 16px" }}><Badge status={task.status} /></td>
+                  <td style={{ padding: "13px 16px" }}><Badge status={autoStatus(task)} /></td>
                   <td style={{ padding: "13px 16px" }}>
                     <select value={task.status} onChange={e => updateStatus(task.id, e.target.value)}
                       style={{ background: "#0d0d0d", border: "1px solid #1a1a1a", borderRadius: "6px", padding: "4px 8px", color: "#555", fontSize: "11px", cursor: "pointer", outline: "none" }}>
