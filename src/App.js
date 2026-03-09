@@ -264,11 +264,11 @@ function TasksView({ bizFilter, profile, clientMembers }) {
     const [{ data: t }, { data: p }, { data: e }] = await Promise.all([
       taskQuery,
       projQuery,
-      supabase.from("profiles").select("id, full_name").eq("business", bizFilter),
+      supabase.from("profiles").select("id, full_name, is_owner").eq("business", bizFilter),
     ]);
     setTasks(t || []);
     setClients(p || []);
-    setEmployees(e || []);
+    setEmployees(role === "owner" ? (e || []) : (e || []).filter(p => !p.is_owner));
     setLoading(false);
   }
 
@@ -314,7 +314,7 @@ function TasksView({ bizFilter, profile, clientMembers }) {
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "10px" }}>
             <Select label="Assign To" value={form.assigned_to} onChange={v => setForm({ ...form, assigned_to: v })}
-              options={[{ value: "", label: "Select employee" }, ...employees.map(e => ({ value: e.id, label: e.full_name }))]} />
+              options={[{ value: "", label: "Select employee" }, ...employees.filter(e => profile?.is_owner || !e.is_owner).map(e => ({ value: e.id, label: e.full_name }))]} />
             <Select label="Client" value={form.client_id} onChange={v => setForm({ ...form, client_id: v })}
               options={[{ value: "", label: "Select client" }, ...clients.map(p => ({ value: p.id, label: p.name }))]} />
           </div>
