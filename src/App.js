@@ -776,9 +776,15 @@ function AdminView({ bizFilter, bizColor }) {
             <button style={btnStyle} onClick={async () => {
               if (!newName || !newEmail || !newRole) return flash("❌ Please fill all fields");
               const pass = newPass || "TempPass123!";
+              const { data: { session } } = await supabase.auth.getSession();
+              const token = session?.access_token || "sb_publishable_0vLCym3N81KNa7M-GBcXLA_AnSPDis5";
               const res = await fetch("https://nbojegbpyzfhfeqoiebn.supabase.co/functions/v1/create-user", {
                 method: "POST",
-                headers: { "Content-Type": "application/json", "Authorization": "Bearer sb_publishable_0vLCym3N81KNa7M-GBcXLA_AnSPDis5" },
+                headers: { 
+                  "Content-Type": "application/json", 
+                  "Authorization": `Bearer ${token}`,
+                  "apikey": "sb_publishable_0vLCym3N81KNa7M-GBcXLA_AnSPDis5"
+                },
                 body: JSON.stringify({ email: newEmail, password: pass, full_name: newName, role: newRole, business: newBiz })
               });
               const data = await res.json();
