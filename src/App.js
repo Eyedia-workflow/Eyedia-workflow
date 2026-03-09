@@ -248,12 +248,15 @@ function TasksView({ bizFilter, profile, clientMembers }) {
     setLoading(true);
     let projIds = null;
     if (role === "manager") {
-      const { data: mp } = await supabase.from("client_members").select("client_id").eq("manager_id", profile.id);
+      const { data: mp } = await supabase.from("client_members").select("client_id").eq("profile_id", profile.id).ilike("project_role", "%manager%");
       projIds = (mp || []).map(r => r.client_id);
     }
     let taskQuery = supabase.from("tasks").select("*, profiles(full_name), clients(name)").eq("business", bizFilter);
     if (role === "employee") taskQuery = taskQuery.eq("assigned_to", profile.id);
-    else if (role === "manager" && projIds?.length) taskQuery = taskQuery.in("client_id", projIds);
+    else if (role === "manager") {
+      if (projIds?.length) taskQuery = taskQuery.in("client_id", projIds);
+      else { setTasks([]); setClients([]); setEmployees([]); setLoading(false); return; }
+    }
 
     let projQuery = supabase.from("clients").select("id, name").eq("business", bizFilter);
     if (role === "manager" && projIds?.length) projQuery = projQuery.in("id", projIds);
@@ -395,7 +398,7 @@ function ClientsView({ bizFilter, bizColor, profile, clientMembers }) {
     setLoading(true);
     let query = supabase.from("clients").select("*").eq("business", bizFilter);
     if (role === "manager") {
-      const { data: mp } = await supabase.from("client_members").select("client_id").eq("manager_id", profile.id);
+      const { data: mp } = await supabase.from("client_members").select("client_id").eq("profile_id", profile.id).ilike("project_role", "%manager%");
       const ids = (mp || []).map(r => r.client_id);
       if (ids.length) query = query.in("id", ids); else { setClients([]); setLoading(false); return; }
     }
@@ -479,7 +482,7 @@ function DeliverablesView({ bizFilter, profile, clientMembers }) {
     setLoading(true);
     let query = supabase.from("deliverables").select("*, profiles(full_name)").eq("business", bizFilter);
     if (role === "manager") {
-      const { data: mp } = await supabase.from("client_members").select("client_id").eq("manager_id", profile.id);
+      const { data: mp } = await supabase.from("client_members").select("client_id").eq("profile_id", profile.id).ilike("project_role", "%manager%");
       const ids = (mp || []).map(r => r.client_id);
       if (ids.length) query = query.in("client_id", ids); else { setItems([]); setLoading(false); return; }
     }
