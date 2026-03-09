@@ -14,6 +14,8 @@ const STATUS = {
   "in-progress":{ bg: "#FFD60015", text: "#FFD600", dot: "#FFD600", label: "In Progress" },
   "done":       { bg: "#4ade8015", text: "#4ade80", dot: "#4ade80", label: "Done" },
   "overdue":    { bg: "#ff444415", text: "#ff6b6b", dot: "#ff6b6b", label: "Overdue" },
+  "submitted":  { bg: "#a855f715", text: "#a855f7", dot: "#a855f7", label: "Submitted" },
+  "rejected":   { bg: "#ff444415", text: "#ff6b6b", dot: "#ff6b6b", label: "Rejected" },
 };
 
 const ROLE_BADGE = {
@@ -299,9 +301,26 @@ function TasksView({ bizFilter, profile, clientMembers }) {
     load();
   }
 
+  async function deleteTask(id) {
+    if (!window.confirm("Delete this task?")) return;
+    await supabase.from("tasks").delete().eq("id", id);
+    load();
+  }
+
   async function submitLink(id, link) {
     if (!link) return;
-    await supabase.from("tasks").update({ delivery_link: link, status: "done" }).eq("id", id);
+    await supabase.from("tasks").update({ delivery_link: link, status: "submitted" }).eq("id", id);
+    load();
+  }
+
+  async function approveTask(id) {
+    await supabase.from("tasks").update({ status: "done" }).eq("id", id);
+    load();
+  }
+
+  async function rejectTask(id) {
+    const reason = window.prompt("Reason for rejection (optional):");
+    await supabase.from("tasks").update({ status: "in-progress", delivery_link: null, rejection_note: reason || "Rejected by manager" }).eq("id", id);
     load();
   }
 
@@ -345,7 +364,7 @@ function TasksView({ bizFilter, profile, clientMembers }) {
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr style={{ borderBottom: "1px solid #1a1a1a" }}>
-                {["Task", "Assigned To", "Client", "Deadline", "Status", "Update", "Delivery"].map(h => (
+                {[...["Task", "Assigned To", "Client", "Deadline", "Status", "Update"], ...(canAdd ? ["Delete"] : []), "Delivery"].map(h => (
                   <th key={h} style={{ padding: "12px 16px", textAlign: "left", fontSize: "10px", color: "#333", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px", whiteSpace: "nowrap" }}>{h}</th>
                 ))}
               </tr>
@@ -369,23 +388,63 @@ function TasksView({ bizFilter, profile, clientMembers }) {
                       {["pending", "in-progress", "done", "overdue"].map(s => <option key={s} value={s}>{s}</option>)}
                     </select>
                   </td>
+                  {canAdd && (
+                    <td style={{ padding: "13px 16px" }}>
+                      <button onClick={() => deleteTask(task.id)}
+                        style={{ padding: "4px 10px", background: "transparent", border: "1px solid #ff444430", borderRadius: "6px", color: "#ff6b6b", fontSize: "11px", cursor: "pointer" }}>
+                        🗑️
+                      </button>
+                    </td>
+                  )}
                   <td style={{ padding: "13px 16px", minWidth: "180px" }}>
-                    {task.delivery_link
-                      ? <a href={task.delivery_link} target="_blank" rel="noreferrer" style={{ fontSize: "11px", color: "#4ade80", fontWeight: 600, textDecoration: "none" }}>🔗 View Delivery</a>
-                      : (task.assigned_to === profile?.id || role === "owner") && (
-                        <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
-                          <input
-                            placeholder="Drop link here..."
-                            onKeyDown={e => { if (e.key === "Enter") submitLink(task.id, e.target.value); }}
-                            style={{ background: "#0d0d0d", border: "1px solid #1a1a1a", borderRadius: "6px", padding: "4px 8px", color: "#e0e0e0", fontSize: "11px", outline: "none", width: "130px" }}
-                          />
-                          <button onClick={e => { const inp = e.target.previousSibling; submitLink(task.id, inp.value); }}
-                            style={{ padding: "4px 8px", background: "#4ade8015", border: "1px solid #4ade8030", borderRadius: "6px", color: "#4ade80", fontSize: "11px", cursor: "pointer", whiteSpace: "nowrap" }}>
-                            ✓
-                          </button>
-                        </div>
-                      )
-                    }
+                    {task.status === "submitted" && task.delivery_link ? (
+                      <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                        <a href={task.delivery_link} target="_blank" rel="noreferrer" style={{ fontSize: "11px", color: "#a855f7", fontWeight: 600, textDecoration: "none" }}>🔗 Review Delivery</a>
+                        {canAdd && (
+                          <div style={{ display: "flex", gap: "6px" }}>
+                            <button onClick={() => approveTask(task.id)}
+                              style={{ padding: "4px 10px", background: "#4ade8015", border: "1px solid #4ade8030", borderRadius: "6px", color: "#4ade80", fontSize: "11px", cursor: "pointer" }}>
+                              ✅ Approve
+                            </button>
+                            <button onClick={() => rejectTask(task.id)}
+                              style={{ padding: "4px 10px", background: "#ff444415", border: "1px solid #ff444430", borderRadius: "6px", color: "#ff6b6b", fontSize: "11px", cursor: "pointer" }}>
+                              ❌ Reject
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    ) : task.status === "done" && task.delivery_link ? (
+                      <a href={task.delivery_link} target="_blank" rel="noreferrer" style={{ fontSize: "11px", color: "#4ade80", fontWeight: 600, textDecoration: "none" }}>🔗 View Delivery</a>
+                    ) : task.status === "rejected" ? (
+                      <div>
+                        <div style={{ fontSize: "11px", color: "#ff6b6b", marginBottom: "4px" }}>❌ {task.rejection_note || "Rejected"}</div>
+                        {task.assigned_to === profile?.id && (
+                          <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+                            <input
+                              placeholder="Resubmit link..."
+                              onKeyDown={e => { if (e.key === "Enter") submitLink(task.id, e.target.value); }}
+                              style={{ background: "#0d0d0d", border: "1px solid #ff444430", borderRadius: "6px", padding: "4px 8px", color: "#e0e0e0", fontSize: "11px", outline: "none", width: "120px" }}
+                            />
+                            <button onClick={e => { const inp = e.target.previousSibling; submitLink(task.id, inp.value); }}
+                              style={{ padding: "4px 8px", background: "#FFD60015", border: "1px solid #FFD60030", borderRadius: "6px", color: "#FFD600", fontSize: "11px", cursor: "pointer" }}>
+                              ↩
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    ) : task.assigned_to === profile?.id ? (
+                      <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+                        <input
+                          placeholder="Drop link here..."
+                          onKeyDown={e => { if (e.key === "Enter") submitLink(task.id, e.target.value); }}
+                          style={{ background: "#0d0d0d", border: "1px solid #1a1a1a", borderRadius: "6px", padding: "4px 8px", color: "#e0e0e0", fontSize: "11px", outline: "none", width: "130px" }}
+                        />
+                        <button onClick={e => { const inp = e.target.previousSibling; submitLink(task.id, inp.value); }}
+                          style={{ padding: "4px 8px", background: "#4ade8015", border: "1px solid #4ade8030", borderRadius: "6px", color: "#4ade80", fontSize: "11px", cursor: "pointer", whiteSpace: "nowrap" }}>
+                          ✓
+                        </button>
+                      </div>
+                    ) : null}
                   </td>
                 </tr>
               ))}
