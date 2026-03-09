@@ -787,8 +787,10 @@ function AdminView({ bizFilter, bizColor }) {
                 },
                 body: JSON.stringify({ email: newEmail, password: pass, full_name: newName, role: newRole, business: newBiz })
               });
-              const data = await res.json();
+              let data;
+              try { data = await res.json(); } catch(e) { flash("❌ Response error: " + res.status + " " + res.statusText); return; }
               if (data.error) flash("❌ " + data.error);
+              else if (!res.ok) flash("❌ HTTP " + res.status + ": " + JSON.stringify(data));
               else { flash("✅ " + newName + " added! Password: " + pass); setNewName(""); setNewEmail(""); setNewRole(""); setNewPass(""); loadAll(); }
             }}>Add Team Member</button>
           </div>
