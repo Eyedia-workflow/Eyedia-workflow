@@ -19,7 +19,7 @@ const STATUS = {
 const ROLE_BADGE = {
   owner:    { color: "#FFD600", label: "OWNER" },
   manager:  { color: "#00C9CC", label: "MANAGER" },
-  employee: { color: "#888",    label: "EMPLOYEE" },
+  employee: { color: "#888",    label: "TEAM MEMBER" },
 };
 
 function getRole(profile, clientMembers) {
