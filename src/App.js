@@ -1,6 +1,6 @@
-// v2.1 - light theme + mobile cards
+// v2.2 - fixed build errors
 import { useState, useEffect } from "react";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "@supabase/supabase-js";
 
 const SUPABASE_URL = "https://nbojegbpyzfhfeqoiebn.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ib2plZ2JweXpmaGZlcW9pZWJuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5OTQ2NjQsImV4cCI6MjA4ODU3MDY2NH0.TtHMGuKqpSpE8sPaSLVhdXi5yKTJEaWsMx7cdqTGpek";
@@ -124,7 +124,7 @@ function AuthScreen({ onLogin }) {
             </svg>
           </div>
           <div>
-            <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: "16px", letterSpacing: "2.5px", color: "#fff" }}>WE ARE EYEDIA</div>
+            <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: "16px", letterSpacing: "2.5px", color: "#111111" }}>WE ARE EYEDIA</div>
             <div style={{ fontSize: "9px", color: "#999999", letterSpacing: "1px", textTransform: "uppercase" }}>Workflow OS</div>
           </div>
         </div>
@@ -159,7 +159,8 @@ function OverviewView({ bizFilter, bizColor, profile, clientMembers }) {
       setLoading(true);
       let projQuery = supabase.from("clients").select("*").eq("business", bizFilter);
       if (role === "manager") {
-        const { data: mp } = await supabase.from("client_members").select("client_id").eq("manager_id", profile.id);
+        // FIX: was manager_id, should be profile_id
+        const { data: mp } = await supabase.from("client_members").select("client_id").eq("profile_id", profile.id).ilike("project_role", "%manager%");
         const ids = (mp || []).map(r => r.client_id);
         if (ids.length) projQuery = projQuery.in("id", ids); else { setClients([]); setLoading(false); return; }
       }
@@ -204,10 +205,10 @@ function OverviewView({ bizFilter, bizColor, profile, clientMembers }) {
                 {emp.full_name?.split(" ").map(n => n[0]).join("").slice(0, 2)}
               </div>
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: "12px", fontWeight: 600, color: "#ccc" }}>{emp.full_name}</div>
+                <div style={{ fontSize: "12px", fontWeight: 600, color: "#111111" }}>{emp.full_name}</div>
                 <div style={{ fontSize: "10px", color: "#888888" }}>{emp.role}</div>
               </div>
-              <RolePill profile={emp} />
+              <RolePill profile={emp} clientMembers={clientMembers} />
             </div>
           ))}
         </div>
@@ -221,8 +222,8 @@ function OverviewView({ bizFilter, bizColor, profile, clientMembers }) {
               <div key={p.id} style={{ marginBottom: "16px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px" }}>
                   <div>
-                    <div style={{ fontSize: "12px", fontWeight: 600, color: "#ccc" }}>{p.name}</div>
-                    <div style={{ fontSize: "10px", color: "#888888" }}>{p.client}</div>
+                    <div style={{ fontSize: "12px", fontWeight: 600, color: "#111111" }}>{p.name}</div>
+                    <div style={{ fontSize: "10px", color: "#888888" }}>{p.deadline}</div>
                   </div>
                   <span style={{ fontSize: "12px", color: barColor, fontWeight: 700 }}>{p.progress}%</span>
                 </div>
@@ -442,7 +443,7 @@ function ClientsView({ bizFilter, bizColor, profile, clientMembers }) {
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
-  const [form, setForm] = useState({ name: "", client: "", deadline: "", progress: 0, status: "on-track" });
+  const [form, setForm] = useState({ name: "", deadline: "", progress: 0, status: "on-track" });
   const role = getRole(profile, clientMembers);
   const canAdd = role === "owner" || role === "manager";
 
@@ -462,13 +463,14 @@ function ClientsView({ bizFilter, bizColor, profile, clientMembers }) {
   useEffect(() => { load(); }, [bizFilter]);
 
   async function addClient() {
-    if (!form.name || !form.client) return;
+    if (!form.name) return;
+    // FIX: was inserting {manager_id} which doesn't exist — now uses profile_id
     const { data } = await supabase.from("clients").insert([{ ...form, business: bizFilter }]).select().single();
     if (data && role === "manager") {
-      await supabase.from("client_members").insert([{ manager_id: profile.id, client_id: data.id }]);
+      await supabase.from("client_members").insert([{ profile_id: profile.id, client_id: data.id, project_role: "Account Manager" }]);
     }
     setShowAdd(false);
-    setForm({ name: "", client: "", deadline: "", progress: 0, status: "on-track" });
+    setForm({ name: "", deadline: "", progress: 0, status: "on-track" });
     load();
   }
 
@@ -484,9 +486,8 @@ function ClientsView({ bizFilter, bizColor, profile, clientMembers }) {
       {showAdd && (
         <div style={{ background: "#ffffff", border: "1px solid #FFD60030", borderRadius: "14px", padding: "20px", marginBottom: "16px" }}>
           <div style={{ fontSize: "12px", color: "#FFD600", fontWeight: 700, marginBottom: "14px" }}>New Client</div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "10px", marginBottom: "14px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "14px" }}>
             <Input label="Client Name" value={form.name} onChange={v => setForm({ ...form, name: v })} />
-            <Input label="Client" value={form.client} onChange={v => setForm({ ...form, client: v })} />
             <Input label="Deadline" value={form.deadline} onChange={v => setForm({ ...form, deadline: v })} type="date" />
           </div>
           <div style={{ display: "flex", gap: "8px" }}>
@@ -506,7 +507,7 @@ function ClientsView({ bizFilter, bizColor, profile, clientMembers }) {
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "14px" }}>
                   <div style={{ flex: 1, marginRight: "10px" }}>
                     <div style={{ fontSize: "14px", fontWeight: 700, color: "#111111", marginBottom: "3px" }}>{p.name}</div>
-                    <div style={{ fontSize: "11px", color: "#888888" }}>{p.client} · {p.deadline}</div>
+                    <div style={{ fontSize: "11px", color: "#888888" }}>{p.deadline}</div>
                   </div>
                   <Badge status={p.status} />
                 </div>
@@ -563,7 +564,7 @@ function DeliverablesView({ bizFilter, profile, clientMembers }) {
             </div>
             <div>
               <div style={{ fontSize: "13px", fontWeight: 600, color: "#111111" }}>{d.name}</div>
-              <div style={{ fontSize: "11px", color: "#888888", marginTop: "2px" }}>{d.client} · {d.profiles?.full_name || "—"} · Due {d.due_date}</div>
+              <div style={{ fontSize: "11px", color: "#888888", marginTop: "2px" }}>{d.profiles?.full_name || "—"} · Due {d.due_date}</div>
             </div>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
@@ -751,7 +752,6 @@ function AdminView({ bizFilter, bizColor }) {
       {/* ── CLIENTS TAB ── */}
       {tab === "clients" && (
         <div>
-          {/* Add/Edit Client Form */}
           <div style={{ background: "#ffffff", border: `1px solid ${bizColor}20`, borderRadius: "12px", padding: "20px", marginBottom: "24px" }}>
             <div style={{ fontSize: "12px", fontWeight: 700, color: bizColor, textTransform: "uppercase", letterSpacing: "1px", marginBottom: "16px" }}>
               {editClient ? "✏️ Edit Client" : "➕ Add New Client"}
@@ -781,7 +781,6 @@ function AdminView({ bizFilter, bizColor }) {
             </div>
           </div>
 
-          {/* Clients List */}
           {loading ? <Spinner /> : clients.map(c => (
             <div key={c.id} style={cardStyle}>
               <div>
@@ -800,7 +799,6 @@ function AdminView({ bizFilter, bizColor }) {
       {/* ── TEAM TAB ── */}
       {tab === "team" && (
         <div>
-          {/* Add Team Member Form */}
           <div style={{ background: "#ffffff", border: `1px solid ${bizColor}20`, borderRadius: "12px", padding: "20px", marginBottom: "24px" }}>
             <div style={{ fontSize: "12px", fontWeight: 700, color: bizColor, textTransform: "uppercase", letterSpacing: "1px", marginBottom: "16px" }}>➕ Add Team Member</div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "12px" }}>
@@ -833,8 +831,8 @@ function AdminView({ bizFilter, bizColor }) {
               const pass = newPass || "TempPass123!";
               const res = await fetch("https://nbojegbpyzfhfeqoiebn.supabase.co/functions/v1/create-user", {
                 method: "POST",
-                headers: { 
-                  "Content-Type": "application/json", 
+                headers: {
+                  "Content-Type": "application/json",
                   "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ib2plZ2JweXpmaGZlcW9pZWJuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5OTQ2NjQsImV4cCI6MjA4ODU3MDY2NH0.TtHMGuKqpSpE8sPaSLVhdXi5yKTJEaWsMx7cdqTGpek",
                   "apikey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ib2plZ2JweXpmaGZlcW9pZWJuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5OTQ2NjQsImV4cCI6MjA4ODU3MDY2NH0.TtHMGuKqpSpE8sPaSLVhdXi5yKTJEaWsMx7cdqTGpek"
                 },
@@ -863,7 +861,6 @@ function AdminView({ bizFilter, bizColor }) {
       {/* ── ASSIGNMENTS TAB ── */}
       {tab === "assignments" && (
         <div>
-          {/* Assign Form */}
           <div style={{ background: "#ffffff", border: `1px solid ${bizColor}20`, borderRadius: "12px", padding: "20px", marginBottom: "24px" }}>
             <div style={{ fontSize: "12px", fontWeight: 700, color: bizColor, textTransform: "uppercase", letterSpacing: "1px", marginBottom: "16px" }}>🔗 Assign Team Member to Client</div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "12px" }}>
@@ -889,7 +886,6 @@ function AdminView({ bizFilter, bizColor }) {
             <button style={btnStyle} onClick={assign}>Assign</button>
           </div>
 
-          {/* Current Assignments */}
           <div style={{ fontSize: "11px", color: "#555555", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px", marginBottom: "12px" }}>Current Assignments</div>
           {loading ? <Spinner /> : clientMembers.filter(m => clients.find(c => c.id === m.client_id)).map(m => (
             <div key={m.id} style={cardStyle}>
@@ -937,7 +933,6 @@ export default function EyediaApp() {
   async function loadProfile(uid) {
     const { data } = await supabase.from("profiles").select("*").eq("id", uid).single();
     if (data) { setProfile(data); if (data.business && data.business !== "both") setActiveBiz(data.business); }
-    // Load client memberships
     const { data: members } = await supabase.from("client_members").select("*");
     if (members) setClientMembers(members);
   }
@@ -955,18 +950,12 @@ export default function EyediaApp() {
     ...(role === "owner" ? [{ id: "admin", label: "Admin", icon: "⚙" }] : []),
   ];
 
-  if (!authChecked || (user && !profile)) return <div style={{ background: "#f5f5f5", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", color: "#666666", fontFamily: "sans-serif" }}>Loading...</div>;
+  if (!authChecked || (user && !profile)) return (
+    <div style={{ background: "#f5f5f5", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", color: "#666666", fontFamily: "sans-serif" }}>
+      Loading...
+    </div>
+  );
   if (!user) return <AuthScreen onLogin={(u) => { setUser(u); loadProfile(u.id); }} />;
-
-  const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
-
-  const navIcons = {
-    overview:     "⬡",
-    tasks:        "◈",
-    clients:     "◻",
-    deliverables: "◷",
-    followups:    "⚡",
-  };
 
   return (
     <div style={{ fontFamily: "'DM Sans', 'Helvetica Neue', sans-serif", background: "#f5f5f5", minHeight: "100vh", color: "#111111" }}>
@@ -974,12 +963,11 @@ export default function EyediaApp() {
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Bebas+Neue&display=swap');
         * { box-sizing: border-box; margin: 0; padding: 0; }
         ::-webkit-scrollbar { width: 4px; height: 4px; }
-        ::-webkit-scrollbar-track { background: #0d0d0d; }
-        ::-webkit-scrollbar-thumb { background: #222; border-radius: 4px; }
+        ::-webkit-scrollbar-track { background: #f0f0f0; }
+        ::-webkit-scrollbar-thumb { background: #cccccc; border-radius: 4px; }
         @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
         @keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
         .fade-in { animation: fadeIn 0.25s ease forwards; }
-        select option { background: #111; }
         @media (max-width: 767px) {
           .desktop-sidebar { display: none !important; }
           .desktop-topbar-right { display: none !important; }
@@ -988,23 +976,23 @@ export default function EyediaApp() {
         }
         @media (min-width: 768px) {
           .mobile-bottom-nav { display: none !important; }
-          .mobile-top-biz { display: none !important; }
+          .mobile-top-right { display: none !important; }
         }
       `}</style>
 
       {/* ── TOP BAR ── */}
-      <div style={{ borderBottom: "1px solid #f0f0f0", padding: "0 16px", display: "flex", alignItems: "center", justifyContent: "space-between", height: "54px", position: "sticky", top: 0, background: "#f5f5f5", zIndex: 100 }}>
-        
+      <div style={{ borderBottom: "1px solid #e8e8e8", padding: "0 16px", display: "flex", alignItems: "center", justifyContent: "space-between", height: "54px", position: "sticky", top: 0, background: "#f5f5f5", zIndex: 100 }}>
+
         {/* Logo */}
         <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
-          <img src="/logo.jpg" alt="Eyedia" style={{ width: "32px", height: "32px", borderRadius: "8px", objectFit: "cover" }} />
+          <img src="/logo.jpg" alt="Eyedia" style={{ width: "32px", height: "32px", borderRadius: "8px", objectFit: "cover" }} onError={e => { e.target.style.display = "none"; }} />
           <div>
-            <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: "13px", letterSpacing: "2px", color: "#fff", lineHeight: 1 }}>WE ARE EYEDIA</div>
+            <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: "13px", letterSpacing: "2px", color: "#111111", lineHeight: 1 }}>WE ARE EYEDIA</div>
             <div style={{ fontSize: "8px", color: "#666666", letterSpacing: "1px", textTransform: "uppercase" }}>Workflow OS</div>
           </div>
         </div>
 
-        {/* Business Toggle — shown in top bar always */}
+        {/* Business Toggle */}
         {(role === "owner" || profile?.business === "both") && (
           <div className="biz-toggle" style={{ display: "flex", gap: "3px", background: "#ffffff", padding: "3px", borderRadius: "9px", border: "1px solid #eeeeee" }}>
             {[{ id: "digital", label: "Digital", color: "#FFD600" }, { id: "production", label: "Production", color: "#00C9CC" }].map(b => (
@@ -1019,7 +1007,7 @@ export default function EyediaApp() {
           </div>
         )}
 
-        {/* Desktop right — user info + signout */}
+        {/* Desktop right */}
         <div className="desktop-topbar-right" style={{ display: "flex", alignItems: "center", gap: "10px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
             <div style={{ width: "6px", height: "6px", background: "#4ade80", borderRadius: "50%", animation: "pulse 2s infinite" }} />
@@ -1032,7 +1020,7 @@ export default function EyediaApp() {
           <button onClick={() => supabase.auth.signOut()} style={{ padding: "4px 10px", background: "transparent", border: "1px solid #e8e8e8", borderRadius: "7px", color: "#666666", fontSize: "10px", cursor: "pointer" }}>Sign out</button>
         </div>
 
-        {/* Mobile right — just live dot + sign out */}
+        {/* Mobile right */}
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }} className="mobile-top-right">
           <div style={{ width: "6px", height: "6px", background: "#4ade80", borderRadius: "50%", animation: "pulse 2s infinite" }} />
           <button onClick={() => supabase.auth.signOut()} style={{ padding: "4px 10px", background: "transparent", border: "1px solid #e8e8e8", borderRadius: "7px", color: "#555555", fontSize: "10px", cursor: "pointer" }}>Out</button>
@@ -1043,7 +1031,7 @@ export default function EyediaApp() {
       <div style={{ display: "flex", height: "calc(100vh - 54px)" }}>
 
         {/* Desktop Sidebar */}
-        <div className="desktop-sidebar" style={{ width: "190px", borderRight: "1px solid #111", padding: "16px 10px", flexShrink: 0, display: "flex", flexDirection: "column" }}>
+        <div className="desktop-sidebar" style={{ width: "190px", borderRight: "1px solid #e8e8e8", padding: "16px 10px", flexShrink: 0, display: "flex", flexDirection: "column", background: "#ffffff" }}>
           {navItems.map(item => (
             <button key={item.id} onClick={() => setActiveView(item.id)} style={{
               width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
@@ -1058,10 +1046,10 @@ export default function EyediaApp() {
             </button>
           ))}
           <div style={{ marginTop: "auto" }}>
-            <div style={{ height: "1px", background: "#ffffff", marginBottom: "12px" }} />
+            <div style={{ height: "1px", background: "#e8e8e8", marginBottom: "12px" }} />
             <div style={{ padding: "10px", background: `${bizColor}08`, border: `1px solid ${bizColor}15`, borderRadius: "9px" }}>
               <div style={{ fontSize: "9px", color: bizColor, fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px", marginBottom: "4px" }}>Active</div>
-              <div style={{ fontSize: "12px", fontWeight: 700, color: "#ccc" }}>{bizName}</div>
+              <div style={{ fontSize: "12px", fontWeight: 700, color: "#111111" }}>{bizName}</div>
               <div style={{ fontSize: "10px", color: "#888888", marginTop: "2px" }}>{role === "owner" ? "Owner" : role === "manager" ? "Manager" : profile?.role}</div>
             </div>
           </div>
@@ -1074,7 +1062,7 @@ export default function EyediaApp() {
               <div>
                 <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "2px" }}>
                   <div style={{ width: "3px", height: "16px", background: bizColor, borderRadius: "2px" }} />
-                  <h1 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: "18px", letterSpacing: "2px", color: "#fff" }}>
+                  <h1 style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: "18px", letterSpacing: "2px", color: "#111111" }}>
                     {navItems.find(n => n.id === activeView)?.label.toUpperCase()}
                   </h1>
                 </div>
@@ -1085,7 +1073,7 @@ export default function EyediaApp() {
             {activeView === "tasks" && <TasksView bizFilter={activeBiz} profile={profile} clientMembers={clientMembers} />}
             {activeView === "clients" && <ClientsView bizFilter={activeBiz} bizColor={bizColor} profile={profile} clientMembers={clientMembers} />}
             {activeView === "deliverables" && <DeliverablesView bizFilter={activeBiz} profile={profile} clientMembers={clientMembers} />}
-            {activeView === "followups" && <FollowUpsView bizFilter={activeBiz} profile={profile} clientMembers={clientMembers} />}
+            {activeView === "followups" && <FollowUpsView bizFilter={activeBiz} />}
             {activeView === "admin" && <AdminView bizFilter={activeBiz} bizColor={bizColor} />}
           </div>
         </div>
@@ -1094,7 +1082,7 @@ export default function EyediaApp() {
       {/* ── MOBILE BOTTOM NAV ── */}
       <div className="mobile-bottom-nav" style={{
         position: "fixed", bottom: 0, left: 0, right: 0, height: "64px",
-        background: "#f0f0f0", borderTop: "1px solid #161616",
+        background: "#ffffff", borderTop: "1px solid #e8e8e8",
         display: "flex", alignItems: "center", justifyContent: "space-around",
         zIndex: 200, paddingBottom: "env(safe-area-inset-bottom)",
       }}>
