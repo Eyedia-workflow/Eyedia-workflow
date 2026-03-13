@@ -42,7 +42,7 @@ function isManagerOnClient(profileId, clientId, clientMembers) {
 
 function ProgressBar({ value, color }) {
   return (
-    <div style={{ height: "5px", background: "#1a1a1a", borderRadius: "10px", overflow: "hidden" }}>
+    <div style={{ height: "5px", background: "#e8e8e8", borderRadius: "10px", overflow: "hidden" }}>
       <div style={{ width: `${Math.min(value || 0, 100)}%`, height: "100%", background: color, borderRadius: "10px", transition: "width 0.5s ease" }} />
     </div>
   );
@@ -67,19 +67,19 @@ function RolePill({ profile, clientMembers }) {
 }
 
 function Spinner() {
-  return <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "60px", color: "#333", fontSize: "13px" }}>Loading...</div>;
+  return <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "60px", color: "#666666", fontSize: "13px" }}>Loading...</div>;
 }
 
 function Empty({ msg }) {
-  return <div style={{ textAlign: "center", padding: "60px", color: "#222", fontSize: "13px" }}>{msg}</div>;
+  return <div style={{ textAlign: "center", padding: "60px", color: "#999999", fontSize: "13px" }}>{msg}</div>;
 }
 
 function Input({ label, value, onChange, type = "text", placeholder = "" }) {
   return (
     <div>
-      <div style={{ fontSize: "10px", color: "#333", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.8px", marginBottom: "5px" }}>{label}</div>
+      <div style={{ fontSize: "10px", color: "#666666", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.8px", marginBottom: "5px" }}>{label}</div>
       <input type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
-        style={{ width: "100%", background: "#0d0d0d", border: "1px solid #1a1a1a", borderRadius: "8px", padding: "8px 12px", color: "#e0e0e0", fontSize: "12px", outline: "none" }} />
+        style={{ width: "100%", background: "#ffffff", border: "1px solid #e8e8e8", borderRadius: "8px", padding: "8px 12px", color: "#111111", fontSize: "12px", outline: "none" }} />
     </div>
   );
 }
@@ -87,9 +87,9 @@ function Input({ label, value, onChange, type = "text", placeholder = "" }) {
 function Select({ label, value, onChange, options }) {
   return (
     <div>
-      <div style={{ fontSize: "10px", color: "#333", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.8px", marginBottom: "5px" }}>{label}</div>
+      <div style={{ fontSize: "10px", color: "#666666", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.8px", marginBottom: "5px" }}>{label}</div>
       <select value={value} onChange={e => onChange(e.target.value)}
-        style={{ width: "100%", background: "#0d0d0d", border: "1px solid #1a1a1a", borderRadius: "8px", padding: "8px 12px", color: "#e0e0e0", fontSize: "12px", outline: "none" }}>
+        style={{ width: "100%", background: "#ffffff", border: "1px solid #e8e8e8", borderRadius: "8px", padding: "8px 12px", color: "#111111", fontSize: "12px", outline: "none" }}>
         {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
       </select>
     </div>
@@ -111,11 +111,11 @@ function AuthScreen({ onLogin }) {
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: "#080808", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'DM Sans', sans-serif" }}>
+    <div style={{ minHeight: "100vh", background: "#f5f5f5", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'DM Sans', sans-serif" }}>
       <style>{`@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&family=Bebas+Neue&display=swap');`}</style>
-      <div style={{ width: "380px", background: "#111", border: "1px solid #1a1a1a", borderRadius: "20px", padding: "40px" }}>
+      <div style={{ width: "380px", background: "#ffffff", border: "1px solid #e8e8e8", borderRadius: "20px", padding: "40px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "32px" }}>
-          <div style={{ width: "36px", height: "36px", borderRadius: "10px", background: "#0d0d0d", border: "1px solid #1a1a1a", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <div style={{ width: "36px", height: "36px", borderRadius: "10px", background: "#ffffff", border: "1px solid #e8e8e8", display: "flex", alignItems: "center", justifyContent: "center" }}>
             <svg viewBox="0 0 100 100" width="22" height="22">
               <ellipse cx="50" cy="38" rx="28" ry="26" fill="#FFD600" />
               <circle cx="50" cy="38" r="11" fill="#00C9CC" />
@@ -124,11 +124,11 @@ function AuthScreen({ onLogin }) {
           </div>
           <div>
             <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: "16px", letterSpacing: "2.5px", color: "#fff" }}>WE ARE EYEDIA</div>
-            <div style={{ fontSize: "9px", color: "#222", letterSpacing: "1px", textTransform: "uppercase" }}>Workflow OS</div>
+            <div style={{ fontSize: "9px", color: "#999999", letterSpacing: "1px", textTransform: "uppercase" }}>Workflow OS</div>
           </div>
         </div>
-        <div style={{ fontSize: "18px", fontWeight: 700, color: "#e0e0e0", marginBottom: "6px" }}>Welcome back</div>
-        <div style={{ fontSize: "12px", color: "#333", marginBottom: "28px" }}>Sign in to access your dashboard</div>
+        <div style={{ fontSize: "18px", fontWeight: 700, color: "#111111", marginBottom: "6px" }}>Welcome back</div>
+        <div style={{ fontSize: "12px", color: "#666666", marginBottom: "28px" }}>Sign in to access your dashboard</div>
         {error && <div style={{ background: "#ff6b6b15", border: "1px solid #ff6b6b30", borderRadius: "8px", padding: "10px 14px", fontSize: "12px", color: "#ff6b6b", marginBottom: "16px" }}>{error}</div>}
         <div style={{ marginBottom: "14px" }}>
           <Input label="Email" value={email} onChange={setEmail} type="email" placeholder="you@eyedia.com" />
@@ -137,8 +137,8 @@ function AuthScreen({ onLogin }) {
           <Input label="Password" value={password} onChange={setPassword} type="password" placeholder="••••••••" />
         </div>
         <button onClick={login} disabled={loading} style={{
-          width: "100%", padding: "12px", background: loading ? "#1a1a1a" : "#FFD600", border: "none",
-          borderRadius: "10px", color: loading ? "#333" : "#000", fontSize: "13px", fontWeight: 700,
+          width: "100%", padding: "12px", background: loading ? "#e8e8e8" : "#FFD600", border: "none",
+          borderRadius: "10px", color: loading ? "#666666" : "#000", fontSize: "13px", fontWeight: 700,
           cursor: loading ? "not-allowed" : "pointer", transition: "all 0.2s"
         }}>{loading ? "Signing in..." : "Sign In →"}</button>
       </div>
@@ -184,19 +184,19 @@ function OverviewView({ bizFilter, bizColor, profile, clientMembers }) {
           { label: "Critical", value: clients.filter(p => p.status === "critical").length, sub: "need attention", color: "#ff6b6b", icon: "⚠" },
           { label: "On Track", value: clients.filter(p => p.status === "on-track").length, sub: "running smoothly", color: "#888", icon: "✦" },
         ].map((s, i) => (
-          <div key={i} style={{ background: "#111", border: "1px solid #1a1a1a", borderRadius: "14px", padding: "18px 20px" }}>
+          <div key={i} style={{ background: "#ffffff", border: "1px solid #e8e8e8", borderRadius: "14px", padding: "18px 20px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "10px" }}>
-              <span style={{ fontSize: "10px", color: "#333", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1.2px" }}>{s.label}</span>
+              <span style={{ fontSize: "10px", color: "#666666", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1.2px" }}>{s.label}</span>
               <span>{s.icon}</span>
             </div>
             <div style={{ fontSize: "30px", fontWeight: 800, color: s.color, fontFamily: "'Bebas Neue', sans-serif", letterSpacing: "1px" }}>{s.value}</div>
-            <div style={{ fontSize: "11px", color: "#2a2a2a", marginTop: "4px" }}>{s.sub}</div>
+            <div style={{ fontSize: "11px", color: "#888888", marginTop: "4px" }}>{s.sub}</div>
           </div>
         ))}
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
-        <div style={{ background: "#111", border: "1px solid #1a1a1a", borderRadius: "14px", padding: "20px" }}>
-          <div style={{ fontSize: "10px", color: "#333", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1.2px", marginBottom: "16px" }}>Team</div>
+        <div style={{ background: "#ffffff", border: "1px solid #e8e8e8", borderRadius: "14px", padding: "20px" }}>
+          <div style={{ fontSize: "10px", color: "#666666", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1.2px", marginBottom: "16px" }}>Team</div>
           {employees.length === 0 ? <Empty msg="No team members yet" /> : employees.map(emp => (
             <div key={emp.id} style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "12px" }}>
               <div style={{ width: "32px", height: "32px", borderRadius: "9px", background: `${bizColor}20`, color: bizColor, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "10px", fontWeight: 700, flexShrink: 0 }}>
@@ -204,14 +204,14 @@ function OverviewView({ bizFilter, bizColor, profile, clientMembers }) {
               </div>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: "12px", fontWeight: 600, color: "#ccc" }}>{emp.full_name}</div>
-                <div style={{ fontSize: "10px", color: "#2a2a2a" }}>{emp.role}</div>
+                <div style={{ fontSize: "10px", color: "#888888" }}>{emp.role}</div>
               </div>
               <RolePill profile={emp} />
             </div>
           ))}
         </div>
-        <div style={{ background: "#111", border: "1px solid #1a1a1a", borderRadius: "14px", padding: "20px" }}>
-          <div style={{ fontSize: "10px", color: "#333", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1.2px", marginBottom: "16px" }}>
+        <div style={{ background: "#ffffff", border: "1px solid #e8e8e8", borderRadius: "14px", padding: "20px" }}>
+          <div style={{ fontSize: "10px", color: "#666666", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1.2px", marginBottom: "16px" }}>
             {role === "manager" ? "Your Clients" : "All Clients"}
           </div>
           {clients.length === 0 ? <Empty msg="No clients yet" /> : clients.map(p => {
@@ -221,7 +221,7 @@ function OverviewView({ bizFilter, bizColor, profile, clientMembers }) {
                 <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px" }}>
                   <div>
                     <div style={{ fontSize: "12px", fontWeight: 600, color: "#ccc" }}>{p.name}</div>
-                    <div style={{ fontSize: "10px", color: "#2a2a2a" }}>{p.client}</div>
+                    <div style={{ fontSize: "10px", color: "#888888" }}>{p.client}</div>
                   </div>
                   <span style={{ fontSize: "12px", color: barColor, fontWeight: 700 }}>{p.progress}%</span>
                 </div>
@@ -338,7 +338,7 @@ function TasksView({ bizFilter, profile, clientMembers }) {
       )}
 
       {showAdd && (
-        <div style={{ background: "#111", border: "1px solid #FFD60030", borderRadius: "14px", padding: "20px", marginBottom: "16px" }}>
+        <div style={{ background: "#ffffff", border: "1px solid #FFD60030", borderRadius: "14px", padding: "20px", marginBottom: "16px" }}>
           <div style={{ fontSize: "12px", color: "#FFD600", fontWeight: 700, marginBottom: "14px" }}>New Task</div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "10px" }}>
             <Input label="Title" value={form.title} onChange={v => setForm({ ...form, title: v })} placeholder="Task title" />
@@ -355,49 +355,47 @@ function TasksView({ bizFilter, profile, clientMembers }) {
           </div>
           <div style={{ display: "flex", gap: "8px" }}>
             <button onClick={addTask} style={{ padding: "8px 18px", background: "#FFD600", border: "none", borderRadius: "8px", color: "#000", fontSize: "12px", fontWeight: 700, cursor: "pointer" }}>Save Task</button>
-            <button onClick={() => setShowAdd(false)} style={{ padding: "8px 18px", background: "transparent", border: "1px solid #1a1a1a", borderRadius: "8px", color: "#333", fontSize: "12px", cursor: "pointer" }}>Cancel</button>
+            <button onClick={() => setShowAdd(false)} style={{ padding: "8px 18px", background: "transparent", border: "1px solid #e8e8e8", borderRadius: "8px", color: "#666666", fontSize: "12px", cursor: "pointer" }}>Cancel</button>
           </div>
         </div>
       )}
 
       {tasks.length === 0 ? <Empty msg={canAdd ? "No tasks yet. Add your first task above!" : "No tasks assigned to you yet."} /> : (
-        <div style={{ background: "#111", border: "1px solid #1a1a1a", borderRadius: "14px", overflow: "hidden" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
-            <thead>
-              <tr style={{ borderBottom: "1px solid #1a1a1a" }}>
-                {[...["Task", "Assigned To", "Client", "Deadline", "Status", "Update"], ...(canAdd ? ["Delete"] : []), "Delivery"].map(h => (
-                  <th key={h} style={{ padding: "12px 16px", textAlign: "left", fontSize: "10px", color: "#333", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px", whiteSpace: "nowrap" }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
+        <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
               {tasks.map((task, i) => (
-                <tr key={task.id} style={{ borderBottom: i < tasks.length - 1 ? "1px solid #111" : "none" }}
-                  onMouseEnter={e => e.currentTarget.style.background = "#0d0d0d"}
-                  onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
-                  <td style={{ padding: "13px 16px" }}>
-                    <div style={{ fontSize: "13px", fontWeight: 600, color: "#e0e0e0" }}>{task.title}</div>
-                    {task.description && <div style={{ fontSize: "11px", color: "#2a2a2a", marginTop: "2px" }}>{task.description}</div>}
-                  </td>
-                  <td style={{ padding: "13px 16px", fontSize: "12px", color: "#555" }}>{task.profiles?.full_name || "—"}</td>
-                  <td style={{ padding: "13px 16px", fontSize: "12px", color: "#555" }}>{task.clients?.name || "—"}</td>
-                  <td style={{ padding: "13px 16px", fontSize: "12px", color: "#555", whiteSpace: "nowrap" }}>{task.deadline || "—"}</td>
-                  <td style={{ padding: "13px 16px" }}><Badge status={autoStatus(task)} /></td>
-                  <td style={{ padding: "13px 16px" }}>
-                    <select value={task.status} onChange={e => updateStatus(task.id, e.target.value)}
-                      style={{ background: "#0d0d0d", border: "1px solid #1a1a1a", borderRadius: "6px", padding: "4px 8px", color: "#555", fontSize: "11px", cursor: "pointer", outline: "none" }}>
-                      {["pending", "in-progress", "done", "overdue"].map(s => <option key={s} value={s}>{s}</option>)}
-                    </select>
-                  </td>
+                <div key={task.id} style={{ background: "#ffffff", border: "1px solid #e8e8e8", borderRadius: "14px", padding: "16px" }}>
+                  {/* Top row: title + status + delete */}
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "10px", gap: "8px" }}>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: "14px", fontWeight: 700, color: "#111111" }}>{task.title}</div>
+                      {task.description && <div style={{ fontSize: "11px", color: "#555555", marginTop: "3px" }}>{task.description}</div>}
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
+                      <Badge status={autoStatus(task)} />
+                      {canAdd && <button onClick={() => deleteTask(task.id)} style={{ padding: "4px 8px", background: "transparent", border: "1px solid #ff444430", borderRadius: "6px", color: "#ff6b6b", fontSize: "11px", cursor: "pointer" }}>🗑️</button>}
+                    </div>
+                  </div>
+
+                  {/* Meta row: assigned, client, deadline */}
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: "12px", marginBottom: "12px" }}>
+                    <div style={{ fontSize: "11px", color: "#555555" }}>👤 {task.profiles?.full_name || "—"}</div>
+                    <div style={{ fontSize: "11px", color: "#555555" }}>📁 {task.clients?.name || "—"}</div>
+                    <div style={{ fontSize: "11px", color: "#555555" }}>📅 {task.deadline || "—"}</div>
+                  </div>
+
+                  {/* Status update (owner/manager) */}
                   {canAdd && (
-                    <td style={{ padding: "13px 16px" }}>
-                      <button onClick={() => deleteTask(task.id)}
-                        style={{ padding: "4px 10px", background: "transparent", border: "1px solid #ff444430", borderRadius: "6px", color: "#ff6b6b", fontSize: "11px", cursor: "pointer" }}>
-                        🗑️
-                      </button>
-                    </td>
+                    <div style={{ marginBottom: "12px" }}>
+                      <select value={task.status} onChange={e => updateStatus(task.id, e.target.value)}
+                        style={{ background: "#ffffff", border: "1px solid #e8e8e8", borderRadius: "8px", padding: "6px 12px", color: "#888", fontSize: "11px", cursor: "pointer", outline: "none", width: "100%" }}>
+                        {["pending", "in-progress", "done", "overdue"].map(s => <option key={s} value={s}>{s}</option>)}
+                      </select>
+                    </div>
                   )}
-                  <td style={{ padding: "13px 16px", minWidth: "200px" }}>
+
+                  {/* Delivery section */}
+                  <div>
+                  <div style={{ marginTop: "4px" }}>
                     {task.status === "submitted" && task.delivery_link ? (
                       <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                         <a href={task.delivery_link} target="_blank" rel="noreferrer" style={{ fontSize: "11px", color: "#a855f7", fontWeight: 600, textDecoration: "none" }}>🔗 Review Delivery</a>
@@ -416,7 +414,7 @@ function TasksView({ bizFilter, profile, clientMembers }) {
                         {task.assigned_to === profile?.id && (
                           <div style={{ display: "flex", gap: "5px", alignItems: "center" }}>
                             <input value={linkInputs[task.id] || ""} onChange={e => setLinkInputs(p => ({ ...p, [task.id]: e.target.value }))}
-                              placeholder="New link..." style={{ background: "#0d0d0d", border: "1px solid #ff444430", borderRadius: "6px", padding: "4px 8px", color: "#e0e0e0", fontSize: "11px", outline: "none", width: "120px" }} />
+                              placeholder="New link..." style={{ background: "#ffffff", border: "1px solid #ff444430", borderRadius: "6px", padding: "4px 8px", color: "#111111", fontSize: "11px", outline: "none", width: "120px" }} />
                             <button onClick={() => { submitLink(task.id, linkInputs[task.id]); setLinkInputs(p => ({ ...p, [task.id]: "" })); }}
                               style={{ padding: "4px 8px", background: "#FFD60015", border: "1px solid #FFD60030", borderRadius: "6px", color: "#FFD600", fontSize: "11px", cursor: "pointer" }}>↩</button>
                           </div>
@@ -425,16 +423,14 @@ function TasksView({ bizFilter, profile, clientMembers }) {
                     ) : task.assigned_to === profile?.id ? (
                       <div style={{ display: "flex", gap: "5px", alignItems: "center" }}>
                         <input value={linkInputs[task.id] || ""} onChange={e => setLinkInputs(p => ({ ...p, [task.id]: e.target.value }))}
-                          placeholder="Drop link here..." style={{ background: "#0d0d0d", border: "1px solid #1a1a1a", borderRadius: "6px", padding: "4px 8px", color: "#e0e0e0", fontSize: "11px", outline: "none", width: "130px" }} />
+                          placeholder="Drop link here..." style={{ background: "#ffffff", border: "1px solid #e8e8e8", borderRadius: "6px", padding: "4px 8px", color: "#111111", fontSize: "11px", outline: "none", width: "130px" }} />
                         <button onClick={() => { submitLink(task.id, linkInputs[task.id]); setLinkInputs(p => ({ ...p, [task.id]: "" })); }}
                           style={{ padding: "4px 8px", background: "#4ade8015", border: "1px solid #4ade8030", borderRadius: "6px", color: "#4ade80", fontSize: "11px", cursor: "pointer" }}>✓</button>
                       </div>
                     ) : null}
-                  </td>
-                </tr>
+                  </div>
+                </div>
               ))}
-            </tbody>
-          </table>
         </div>
       )}
     </div>
@@ -486,7 +482,7 @@ function ClientsView({ bizFilter, bizColor, profile, clientMembers }) {
         </div>
       )}
       {showAdd && (
-        <div style={{ background: "#111", border: "1px solid #FFD60030", borderRadius: "14px", padding: "20px", marginBottom: "16px" }}>
+        <div style={{ background: "#ffffff", border: "1px solid #FFD60030", borderRadius: "14px", padding: "20px", marginBottom: "16px" }}>
           <div style={{ fontSize: "12px", color: "#FFD600", fontWeight: 700, marginBottom: "14px" }}>New Client</div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "10px", marginBottom: "14px" }}>
             <Input label="Client Name" value={form.name} onChange={v => setForm({ ...form, name: v })} />
@@ -495,7 +491,7 @@ function ClientsView({ bizFilter, bizColor, profile, clientMembers }) {
           </div>
           <div style={{ display: "flex", gap: "8px" }}>
             <button onClick={addClient} style={{ padding: "8px 18px", background: "#FFD600", border: "none", borderRadius: "8px", color: "#000", fontSize: "12px", fontWeight: 700, cursor: "pointer" }}>Save</button>
-            <button onClick={() => setShowAdd(false)} style={{ padding: "8px 18px", background: "transparent", border: "1px solid #1a1a1a", borderRadius: "8px", color: "#333", fontSize: "12px", cursor: "pointer" }}>Cancel</button>
+            <button onClick={() => setShowAdd(false)} style={{ padding: "8px 18px", background: "transparent", border: "1px solid #e8e8e8", borderRadius: "8px", color: "#666666", fontSize: "12px", cursor: "pointer" }}>Cancel</button>
           </div>
         </div>
       )}
@@ -504,18 +500,18 @@ function ClientsView({ bizFilter, bizColor, profile, clientMembers }) {
           {clients.map(p => {
             const barColor = p.status === "critical" ? "#ff6b6b" : p.status === "at-risk" ? "#00C9CC" : bizColor;
             return (
-              <div key={p.id} style={{ background: "#111", border: "1px solid #1a1a1a", borderRadius: "14px", padding: "20px", transition: "border-color 0.2s, transform 0.2s" }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = "#2a2a2a"; e.currentTarget.style.transform = "translateY(-2px)"; }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = "#1a1a1a"; e.currentTarget.style.transform = "translateY(0)"; }}>
+              <div key={p.id} style={{ background: "#ffffff", border: "1px solid #e8e8e8", borderRadius: "14px", padding: "20px", transition: "border-color 0.2s, transform 0.2s" }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = "#888888"; e.currentTarget.style.transform = "translateY(-2px)"; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = "#e8e8e8"; e.currentTarget.style.transform = "translateY(0)"; }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "14px" }}>
                   <div style={{ flex: 1, marginRight: "10px" }}>
-                    <div style={{ fontSize: "14px", fontWeight: 700, color: "#e0e0e0", marginBottom: "3px" }}>{p.name}</div>
-                    <div style={{ fontSize: "11px", color: "#2a2a2a" }}>{p.client} · {p.deadline}</div>
+                    <div style={{ fontSize: "14px", fontWeight: 700, color: "#111111", marginBottom: "3px" }}>{p.name}</div>
+                    <div style={{ fontSize: "11px", color: "#888888" }}>{p.client} · {p.deadline}</div>
                   </div>
                   <Badge status={p.status} />
                 </div>
                 <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px" }}>
-                  <span style={{ fontSize: "11px", color: "#333" }}>Progress</span>
+                  <span style={{ fontSize: "11px", color: "#666666" }}>Progress</span>
                   <span style={{ fontSize: "12px", color: barColor, fontWeight: 700 }}>{p.progress}%</span>
                 </div>
                 <ProgressBar value={p.progress} color={barColor} />
@@ -560,21 +556,21 @@ function DeliverablesView({ bizFilter, profile, clientMembers }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
       {items.map(d => (
-        <div key={d.id} style={{ background: "#111", border: `1px solid ${d.delivered ? "#4ade8025" : "#1a1a1a"}`, borderRadius: "12px", padding: "16px 20px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div key={d.id} style={{ background: "#ffffff", border: `1px solid ${d.delivered ? "#4ade8025" : "#e8e8e8"}`, borderRadius: "12px", padding: "16px 20px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
             <div style={{ width: "38px", height: "38px", borderRadius: "10px", background: d.delivered ? "#4ade8015" : "#ff6b6b15", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px", flexShrink: 0 }}>
               {d.delivered ? "✓" : "⏳"}
             </div>
             <div>
-              <div style={{ fontSize: "13px", fontWeight: 600, color: "#e0e0e0" }}>{d.name}</div>
-              <div style={{ fontSize: "11px", color: "#2a2a2a", marginTop: "2px" }}>{d.client} · {d.profiles?.full_name || "—"} · Due {d.due_date}</div>
+              <div style={{ fontSize: "13px", fontWeight: 600, color: "#111111" }}>{d.name}</div>
+              <div style={{ fontSize: "11px", color: "#888888", marginTop: "2px" }}>{d.client} · {d.profiles?.full_name || "—"} · Due {d.due_date}</div>
             </div>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
             <span style={{ fontSize: "11px", fontWeight: 700, color: d.delivered ? "#4ade80" : "#ff6b6b", textTransform: "uppercase" }}>
               {d.delivered ? "Delivered" : "Pending"}
             </span>
-            <button onClick={() => toggle(d.id, d.delivered)} style={{ padding: "5px 12px", background: "transparent", border: "1px solid #1a1a1a", borderRadius: "7px", color: "#333", fontSize: "11px", cursor: "pointer" }}>
+            <button onClick={() => toggle(d.id, d.delivered)} style={{ padding: "5px 12px", background: "transparent", border: "1px solid #e8e8e8", borderRadius: "7px", color: "#666666", fontSize: "11px", cursor: "pointer" }}>
               {d.delivered ? "Mark Pending" : "Mark Delivered"}
             </button>
           </div>
@@ -607,26 +603,26 @@ function FollowUpsView({ bizFilter }) {
     <div style={{ maxWidth: "700px" }}>
       <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "20px", padding: "12px 16px", background: "#FFD60008", border: "1px solid #FFD60020", borderRadius: "10px" }}>
         <div style={{ width: "7px", height: "7px", background: "#FFD600", borderRadius: "50%", animation: "pulse 2s infinite", flexShrink: 0 }} />
-        <span style={{ fontSize: "12px", color: "#555" }}>Claude AI monitors your team and surfaces issues here in real time</span>
+        <span style={{ fontSize: "12px", color: "#444444" }}>Claude AI monitors your team and surfaces issues here in real time</span>
       </div>
       {alerts.length === 0
-        ? <div style={{ textAlign: "center", padding: "60px", color: "#222", fontSize: "13px" }}>🎉 All clear — no pending follow-ups!</div>
+        ? <div style={{ textAlign: "center", padding: "60px", color: "#999999", fontSize: "13px" }}>🎉 All clear — no pending follow-ups!</div>
         : alerts.map(f => (
-          <div key={f.id} style={{ borderLeft: `3px solid ${f.alert_type === "critical" ? "#ff6b6b" : "#00C9CC"}`, background: "#111", borderRadius: "0 12px 12px 0", padding: "16px 18px", marginBottom: "10px" }}>
+          <div key={f.id} style={{ borderLeft: `3px solid ${f.alert_type === "critical" ? "#ff6b6b" : "#00C9CC"}`, background: "#ffffff", borderRadius: "0 12px 12px 0", padding: "16px 18px", marginBottom: "10px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px", flexWrap: "wrap", gap: "6px" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                 <span style={{ fontSize: "13px", fontWeight: 700, color: f.alert_type === "critical" ? "#ff6b6b" : "#00C9CC" }}>{f.profiles?.full_name || "Team Member"}</span>
                 <span style={{ fontSize: "10px", fontWeight: 700, color: f.alert_type === "critical" ? "#ff6b6b" : "#00C9CC", textTransform: "uppercase" }}>{f.alert_type}</span>
               </div>
-              <span style={{ fontSize: "11px", color: "#2a2a2a" }}>{new Date(f.created_at).toLocaleDateString()}</span>
+              <span style={{ fontSize: "11px", color: "#888888" }}>{new Date(f.created_at).toLocaleDateString()}</span>
             </div>
-            <p style={{ fontSize: "13px", color: "#555", marginBottom: "12px", lineHeight: "1.6" }}>{f.message}</p>
+            <p style={{ fontSize: "13px", color: "#444444", marginBottom: "12px", lineHeight: "1.6" }}>{f.message}</p>
             <div style={{ display: "flex", gap: "8px" }}>
               {f.sent_whatsapp
                 ? <span style={{ fontSize: "12px", color: "#4ade80", fontWeight: 600 }}>✓ WhatsApp sent</span>
                 : <button onClick={() => markSent(f.id)} style={{ padding: "7px 16px", background: "#FFD60015", border: "1px solid #FFD60030", borderRadius: "8px", color: "#FFD600", fontSize: "12px", fontWeight: 600, cursor: "pointer" }}>📲 Mark as Sent</button>
               }
-              <button onClick={() => dismiss(f.id)} style={{ padding: "7px 16px", background: "transparent", border: "1px solid #1a1a1a", borderRadius: "8px", color: "#333", fontSize: "12px", cursor: "pointer" }}>Dismiss</button>
+              <button onClick={() => dismiss(f.id)} style={{ padding: "7px 16px", background: "transparent", border: "1px solid #e8e8e8", borderRadius: "8px", color: "#666666", fontSize: "12px", cursor: "pointer" }}>Dismiss</button>
             </div>
           </div>
         ))
@@ -729,22 +725,22 @@ function AdminView({ bizFilter, bizColor }) {
     padding: "8px 16px", borderRadius: "8px", border: "none", cursor: "pointer",
     fontSize: "12px", fontWeight: 600, transition: "all 0.15s",
     background: tab === t ? `${bizColor}20` : "transparent",
-    color: tab === t ? bizColor : "#444",
+    color: tab === t ? bizColor : "#555555",
   });
 
-  const inputStyle = { width: "100%", background: "#0d0d0d", border: "1px solid #1a1a1a", borderRadius: "8px", padding: "8px 12px", color: "#e0e0e0", fontSize: "12px", outline: "none" };
-  const labelStyle = { fontSize: "10px", color: "#555", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.8px", marginBottom: "4px", display: "block" };
+  const inputStyle = { width: "100%", background: "#ffffff", border: "1px solid #e8e8e8", borderRadius: "8px", padding: "8px 12px", color: "#111111", fontSize: "12px", outline: "none" };
+  const labelStyle = { fontSize: "10px", color: "#444444", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.8px", marginBottom: "4px", display: "block" };
   const btnStyle = { padding: "9px 20px", background: bizColor, color: "#000", border: "none", borderRadius: "8px", fontSize: "12px", fontWeight: 700, cursor: "pointer" };
   const dangerBtn = { padding: "5px 10px", background: "transparent", border: "1px solid #ff444430", borderRadius: "6px", color: "#ff6b6b", fontSize: "11px", cursor: "pointer" };
-  const editBtn = { padding: "5px 10px", background: "transparent", border: "1px solid #1a1a1a", borderRadius: "6px", color: "#555", fontSize: "11px", cursor: "pointer" };
-  const cardStyle = { background: "#111", border: "1px solid #1a1a1a", borderRadius: "12px", padding: "16px 20px", marginBottom: "8px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", flexWrap: "wrap" };
+  const editBtn = { padding: "5px 10px", background: "transparent", border: "1px solid #e8e8e8", borderRadius: "6px", color: "#444444", fontSize: "11px", cursor: "pointer" };
+  const cardStyle = { background: "#ffffff", border: "1px solid #e8e8e8", borderRadius: "12px", padding: "16px 20px", marginBottom: "8px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", flexWrap: "wrap" };
 
   return (
     <div style={{ maxWidth: "800px" }}>
       {msg && <div style={{ background: "#4ade8015", border: "1px solid #4ade8030", borderRadius: "10px", padding: "10px 16px", marginBottom: "16px", fontSize: "13px", color: "#4ade80" }}>{msg}</div>}
 
       {/* Tabs */}
-      <div style={{ display: "flex", gap: "4px", background: "#0d0d0d", padding: "4px", borderRadius: "10px", border: "1px solid #111", marginBottom: "24px", width: "fit-content" }}>
+      <div style={{ display: "flex", gap: "4px", background: "#ffffff", padding: "4px", borderRadius: "10px", border: "1px solid #eeeeee", marginBottom: "24px", width: "fit-content" }}>
         {["clients", "team", "assignments"].map(t => (
           <button key={t} style={tabStyle(t)} onClick={() => setTab(t)}>
             {t === "clients" ? "📁 Clients" : t === "team" ? "👥 Team" : "🔗 Assign"}
@@ -756,7 +752,7 @@ function AdminView({ bizFilter, bizColor }) {
       {tab === "clients" && (
         <div>
           {/* Add/Edit Client Form */}
-          <div style={{ background: "#111", border: `1px solid ${bizColor}20`, borderRadius: "12px", padding: "20px", marginBottom: "24px" }}>
+          <div style={{ background: "#ffffff", border: `1px solid ${bizColor}20`, borderRadius: "12px", padding: "20px", marginBottom: "24px" }}>
             <div style={{ fontSize: "12px", fontWeight: 700, color: bizColor, textTransform: "uppercase", letterSpacing: "1px", marginBottom: "16px" }}>
               {editClient ? "✏️ Edit Client" : "➕ Add New Client"}
             </div>
@@ -781,7 +777,7 @@ function AdminView({ bizFilter, bizColor }) {
             </div>
             <div style={{ display: "flex", gap: "8px" }}>
               <button style={btnStyle} onClick={saveClient}>{editClient ? "Update Client" : "Add Client"}</button>
-              {editClient && <button style={{ ...btnStyle, background: "transparent", border: "1px solid #1a1a1a", color: "#555" }} onClick={() => { setEditClient(null); setClientName(""); }}>Cancel</button>}
+              {editClient && <button style={{ ...btnStyle, background: "transparent", border: "1px solid #e8e8e8", color: "#444444" }} onClick={() => { setEditClient(null); setClientName(""); }}>Cancel</button>}
             </div>
           </div>
 
@@ -789,8 +785,8 @@ function AdminView({ bizFilter, bizColor }) {
           {loading ? <Spinner /> : clients.map(c => (
             <div key={c.id} style={cardStyle}>
               <div>
-                <div style={{ fontSize: "14px", fontWeight: 700, color: "#e0e0e0" }}>{c.name}</div>
-                <div style={{ fontSize: "11px", color: "#333", marginTop: "3px" }}>Deadline: {c.deadline} · Status: {c.status}</div>
+                <div style={{ fontSize: "14px", fontWeight: 700, color: "#111111" }}>{c.name}</div>
+                <div style={{ fontSize: "11px", color: "#666666", marginTop: "3px" }}>Deadline: {c.deadline} · Status: {c.status}</div>
               </div>
               <div style={{ display: "flex", gap: "8px" }}>
                 <button style={editBtn} onClick={() => startEditClient(c)}>✏️ Edit</button>
@@ -805,7 +801,7 @@ function AdminView({ bizFilter, bizColor }) {
       {tab === "team" && (
         <div>
           {/* Add Team Member Form */}
-          <div style={{ background: "#111", border: `1px solid ${bizColor}20`, borderRadius: "12px", padding: "20px", marginBottom: "24px" }}>
+          <div style={{ background: "#ffffff", border: `1px solid ${bizColor}20`, borderRadius: "12px", padding: "20px", marginBottom: "24px" }}>
             <div style={{ fontSize: "12px", fontWeight: 700, color: bizColor, textTransform: "uppercase", letterSpacing: "1px", marginBottom: "16px" }}>➕ Add Team Member</div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "12px" }}>
               <div>
@@ -854,9 +850,9 @@ function AdminView({ bizFilter, bizColor }) {
           {loading ? <Spinner /> : team.map(p => (
             <div key={p.id} style={cardStyle}>
               <div>
-                <div style={{ fontSize: "13px", fontWeight: 700, color: "#e0e0e0" }}>{p.full_name}</div>
-                <div style={{ fontSize: "11px", color: "#333", marginTop: "3px" }}>{p.role} · {p.business}</div>
-                <div style={{ fontSize: "11px", color: "#222", marginTop: "2px" }}>{clientMembers.filter(m => m.profile_id === p.id).map(m => m.clients?.name).join(", ") || "No clients assigned"}</div>
+                <div style={{ fontSize: "13px", fontWeight: 700, color: "#111111" }}>{p.full_name}</div>
+                <div style={{ fontSize: "11px", color: "#666666", marginTop: "3px" }}>{p.role} · {p.business}</div>
+                <div style={{ fontSize: "11px", color: "#999999", marginTop: "2px" }}>{clientMembers.filter(m => m.profile_id === p.id).map(m => m.clients?.name).join(", ") || "No clients assigned"}</div>
               </div>
               <button style={dangerBtn} onClick={() => deleteEmployee(p.id)}>🗑️ Remove</button>
             </div>
@@ -868,7 +864,7 @@ function AdminView({ bizFilter, bizColor }) {
       {tab === "assignments" && (
         <div>
           {/* Assign Form */}
-          <div style={{ background: "#111", border: `1px solid ${bizColor}20`, borderRadius: "12px", padding: "20px", marginBottom: "24px" }}>
+          <div style={{ background: "#ffffff", border: `1px solid ${bizColor}20`, borderRadius: "12px", padding: "20px", marginBottom: "24px" }}>
             <div style={{ fontSize: "12px", fontWeight: 700, color: bizColor, textTransform: "uppercase", letterSpacing: "1px", marginBottom: "16px" }}>🔗 Assign Team Member to Client</div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "12px" }}>
               <div>
@@ -894,12 +890,12 @@ function AdminView({ bizFilter, bizColor }) {
           </div>
 
           {/* Current Assignments */}
-          <div style={{ fontSize: "11px", color: "#444", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px", marginBottom: "12px" }}>Current Assignments</div>
+          <div style={{ fontSize: "11px", color: "#555555", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px", marginBottom: "12px" }}>Current Assignments</div>
           {loading ? <Spinner /> : clientMembers.filter(m => clients.find(c => c.id === m.client_id)).map(m => (
             <div key={m.id} style={cardStyle}>
               <div>
-                <div style={{ fontSize: "13px", fontWeight: 600, color: "#e0e0e0" }}>{m.profiles?.full_name}</div>
-                <div style={{ fontSize: "11px", color: "#333", marginTop: "3px" }}>{m.clients?.name} · <span style={{ color: bizColor }}>{m.project_role}</span></div>
+                <div style={{ fontSize: "13px", fontWeight: 600, color: "#111111" }}>{m.profiles?.full_name}</div>
+                <div style={{ fontSize: "11px", color: "#666666", marginTop: "3px" }}>{m.clients?.name} · <span style={{ color: bizColor }}>{m.project_role}</span></div>
               </div>
               <button style={dangerBtn} onClick={() => removeAssignment(m.id)}>🗑️ Remove</button>
             </div>
@@ -959,7 +955,7 @@ export default function EyediaApp() {
     ...(role === "owner" ? [{ id: "admin", label: "Admin", icon: "⚙" }] : []),
   ];
 
-  if (!authChecked || (user && !profile)) return <div style={{ background: "#080808", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", color: "#333", fontFamily: "sans-serif" }}>Loading...</div>;
+  if (!authChecked || (user && !profile)) return <div style={{ background: "#f5f5f5", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", color: "#666666", fontFamily: "sans-serif" }}>Loading...</div>;
   if (!user) return <AuthScreen onLogin={(u) => { setUser(u); loadProfile(u.id); }} />;
 
   const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
@@ -973,7 +969,7 @@ export default function EyediaApp() {
   };
 
   return (
-    <div style={{ fontFamily: "'DM Sans', 'Helvetica Neue', sans-serif", background: "#080808", minHeight: "100vh", color: "#e0e0e0" }}>
+    <div style={{ fontFamily: "'DM Sans', 'Helvetica Neue', sans-serif", background: "#f5f5f5", minHeight: "100vh", color: "#111111" }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Bebas+Neue&display=swap');
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -997,26 +993,26 @@ export default function EyediaApp() {
       `}</style>
 
       {/* ── TOP BAR ── */}
-      <div style={{ borderBottom: "1px solid #111", padding: "0 16px", display: "flex", alignItems: "center", justifyContent: "space-between", height: "54px", position: "sticky", top: 0, background: "#080808", zIndex: 100 }}>
+      <div style={{ borderBottom: "1px solid #f0f0f0", padding: "0 16px", display: "flex", alignItems: "center", justifyContent: "space-between", height: "54px", position: "sticky", top: 0, background: "#f5f5f5", zIndex: 100 }}>
         
         {/* Logo */}
         <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
           <img src="/logo.jpg" alt="Eyedia" style={{ width: "32px", height: "32px", borderRadius: "8px", objectFit: "cover" }} />
           <div>
             <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: "13px", letterSpacing: "2px", color: "#fff", lineHeight: 1 }}>WE ARE EYEDIA</div>
-            <div style={{ fontSize: "8px", color: "#333", letterSpacing: "1px", textTransform: "uppercase" }}>Workflow OS</div>
+            <div style={{ fontSize: "8px", color: "#666666", letterSpacing: "1px", textTransform: "uppercase" }}>Workflow OS</div>
           </div>
         </div>
 
         {/* Business Toggle — shown in top bar always */}
         {(role === "owner" || profile?.business === "both") && (
-          <div className="biz-toggle" style={{ display: "flex", gap: "3px", background: "#0d0d0d", padding: "3px", borderRadius: "9px", border: "1px solid #111" }}>
+          <div className="biz-toggle" style={{ display: "flex", gap: "3px", background: "#ffffff", padding: "3px", borderRadius: "9px", border: "1px solid #eeeeee" }}>
             {[{ id: "digital", label: "Digital", color: "#FFD600" }, { id: "production", label: "Production", color: "#00C9CC" }].map(b => (
               <button key={b.id} onClick={() => { setActiveBiz(b.id); setActiveView("overview"); }} style={{
                 padding: "5px 12px", borderRadius: "6px", border: "1px solid transparent", cursor: "pointer",
                 fontSize: "11px", fontWeight: 600, transition: "all 0.2s",
                 background: activeBiz === b.id ? `${b.color}20` : "transparent",
-                color: activeBiz === b.id ? b.color : "#444",
+                color: activeBiz === b.id ? b.color : "#555555",
                 borderColor: activeBiz === b.id ? `${b.color}30` : "transparent",
               }}>{b.label}</button>
             ))}
@@ -1027,19 +1023,19 @@ export default function EyediaApp() {
         <div className="desktop-topbar-right" style={{ display: "flex", alignItems: "center", gap: "10px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
             <div style={{ width: "6px", height: "6px", background: "#4ade80", borderRadius: "50%", animation: "pulse 2s infinite" }} />
-            <span style={{ fontSize: "10px", color: "#333" }}>Live</span>
+            <span style={{ fontSize: "10px", color: "#666666" }}>Live</span>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "11px", color: "#333", background: "#0d0d0d", padding: "4px 10px", borderRadius: "8px", border: "1px solid #111" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "11px", color: "#666666", background: "#ffffff", padding: "4px 10px", borderRadius: "8px", border: "1px solid #eeeeee" }}>
             {profile?.full_name || user.email}
             {profile && <RolePill profile={profile} clientMembers={clientMembers} />}
           </div>
-          <button onClick={() => supabase.auth.signOut()} style={{ padding: "4px 10px", background: "transparent", border: "1px solid #1a1a1a", borderRadius: "7px", color: "#333", fontSize: "10px", cursor: "pointer" }}>Sign out</button>
+          <button onClick={() => supabase.auth.signOut()} style={{ padding: "4px 10px", background: "transparent", border: "1px solid #e8e8e8", borderRadius: "7px", color: "#666666", fontSize: "10px", cursor: "pointer" }}>Sign out</button>
         </div>
 
         {/* Mobile right — just live dot + sign out */}
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }} className="mobile-top-right">
           <div style={{ width: "6px", height: "6px", background: "#4ade80", borderRadius: "50%", animation: "pulse 2s infinite" }} />
-          <button onClick={() => supabase.auth.signOut()} style={{ padding: "4px 10px", background: "transparent", border: "1px solid #1a1a1a", borderRadius: "7px", color: "#444", fontSize: "10px", cursor: "pointer" }}>Out</button>
+          <button onClick={() => supabase.auth.signOut()} style={{ padding: "4px 10px", background: "transparent", border: "1px solid #e8e8e8", borderRadius: "7px", color: "#555555", fontSize: "10px", cursor: "pointer" }}>Out</button>
         </div>
       </div>
 
@@ -1053,7 +1049,7 @@ export default function EyediaApp() {
               width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
               padding: "9px 12px", borderRadius: "8px", border: "none", cursor: "pointer",
               background: activeView === item.id ? `${bizColor}12` : "transparent",
-              color: activeView === item.id ? bizColor : "#333",
+              color: activeView === item.id ? bizColor : "#666666",
               fontSize: "12px", fontWeight: activeView === item.id ? 700 : 500,
               marginBottom: "2px", transition: "all 0.15s", textAlign: "left",
             }}>
@@ -1062,11 +1058,11 @@ export default function EyediaApp() {
             </button>
           ))}
           <div style={{ marginTop: "auto" }}>
-            <div style={{ height: "1px", background: "#111", marginBottom: "12px" }} />
+            <div style={{ height: "1px", background: "#ffffff", marginBottom: "12px" }} />
             <div style={{ padding: "10px", background: `${bizColor}08`, border: `1px solid ${bizColor}15`, borderRadius: "9px" }}>
               <div style={{ fontSize: "9px", color: bizColor, fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px", marginBottom: "4px" }}>Active</div>
               <div style={{ fontSize: "12px", fontWeight: 700, color: "#ccc" }}>{bizName}</div>
-              <div style={{ fontSize: "10px", color: "#2a2a2a", marginTop: "2px" }}>{role === "owner" ? "Owner" : role === "manager" ? "Manager" : profile?.role}</div>
+              <div style={{ fontSize: "10px", color: "#888888", marginTop: "2px" }}>{role === "owner" ? "Owner" : role === "manager" ? "Manager" : profile?.role}</div>
             </div>
           </div>
         </div>
@@ -1082,7 +1078,7 @@ export default function EyediaApp() {
                     {navItems.find(n => n.id === activeView)?.label.toUpperCase()}
                   </h1>
                 </div>
-                <p style={{ fontSize: "10px", color: "#333", paddingLeft: "11px" }}>{bizName}</p>
+                <p style={{ fontSize: "10px", color: "#666666", paddingLeft: "11px" }}>{bizName}</p>
               </div>
             </div>
             {activeView === "overview" && <OverviewView bizFilter={activeBiz} bizColor={bizColor} profile={profile} clientMembers={clientMembers} />}
@@ -1098,7 +1094,7 @@ export default function EyediaApp() {
       {/* ── MOBILE BOTTOM NAV ── */}
       <div className="mobile-bottom-nav" style={{
         position: "fixed", bottom: 0, left: 0, right: 0, height: "64px",
-        background: "#0a0a0a", borderTop: "1px solid #161616",
+        background: "#f0f0f0", borderTop: "1px solid #161616",
         display: "flex", alignItems: "center", justifyContent: "space-around",
         zIndex: 200, paddingBottom: "env(safe-area-inset-bottom)",
       }}>
@@ -1116,7 +1112,7 @@ export default function EyediaApp() {
             </span>
             <span style={{
               fontSize: "9px", fontWeight: activeView === item.id ? 700 : 400,
-              color: activeView === item.id ? bizColor : "#444",
+              color: activeView === item.id ? bizColor : "#555555",
               letterSpacing: "0.3px", textTransform: "uppercase",
             }}>{item.label}</span>
             {activeView === item.id && (
