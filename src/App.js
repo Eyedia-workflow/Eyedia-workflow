@@ -362,7 +362,7 @@ function TasksView({ bizFilter, profile, clientMembers }) {
 
       {tasks.length === 0 ? <Empty msg={canAdd ? "No tasks yet. Add your first task above!" : "No tasks assigned to you yet."} /> : (
         <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-              {tasks.map((task, i) => (
+          {tasks.map((task, i) => (
                 <div key={task.id} style={{ background: "#ffffff", border: "1px solid #e8e8e8", borderRadius: "14px", padding: "16px" }}>
                   {/* Top row: title + status + delete */}
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "10px", gap: "8px" }}>
