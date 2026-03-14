@@ -603,19 +603,32 @@ function ClientsView({ bizFilter, bizColor, profile, clientMembers }) {
 // ─── Deliverables View ────────────────────────────────────
 function DeliverablesView({ bizFilter, profile, clientMembers }) {
   const [items, setItems] = useState([]);
+  const [clients, setClients] = useState([]);
+  const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showAdd, setShowAdd] = useState(false);
+  const [form, setForm] = useState({ name: "", client_id: "", profile_id: "", due_date: "" });
   const role = getRole(profile, clientMembers);
+  const canAdd = role === "owner" || role === "manager";
 
   async function load() {
     setLoading(true);
-    let query = supabase.from("deliverables").select("*, profiles(full_name)").eq("business", bizFilter);
+    let query = supabase.from("deliverables").select("*, profiles(full_name), clients(name)").eq("business", bizFilter);
+    let clientQuery = supabase.from("clients").select("id, name").eq("business", bizFilter);
     if (role === "manager") {
       const { data: mp } = await supabase.from("client_members").select("client_id").eq("profile_id", profile.id).ilike("project_role", "%manager%");
       const ids = (mp || []).map(r => r.client_id);
-      if (ids.length) query = query.in("client_id", ids); else { setItems([]); setLoading(false); return; }
+      if (ids.length) { query = query.in("client_id", ids); clientQuery = clientQuery.in("id", ids); }
+      else { setItems([]); setLoading(false); return; }
     }
-    const { data } = await query;
-    setItems(data || []);
+    const [{ data: d }, { data: c }, { data: e }] = await Promise.all([
+      query,
+      clientQuery,
+      supabase.from("profiles").select("id, full_name").eq("business", bizFilter),
+    ]);
+    setItems(d || []);
+    setClients(c || []);
+    setEmployees(e || []);
     setLoading(false);
   }
 
@@ -626,32 +639,88 @@ function DeliverablesView({ bizFilter, profile, clientMembers }) {
     load();
   }
 
+  async function addDeliverable() {
+    if (!form.name || !form.client_id) return;
+    const { error } = await supabase.from("deliverables").insert([{
+      name: form.name,
+      client_id: parseInt(form.client_id),
+      profile_id: form.profile_id || null,
+      due_date: form.due_date || null,
+      business: bizFilter,
+      delivered: false,
+    }]);
+    if (error) { alert("❌ " + error.message); return; }
+    setShowAdd(false);
+    setForm({ name: "", client_id: "", profile_id: "", due_date: "" });
+    load();
+  }
+
+  async function deleteDeliverable(id) {
+    if (!window.confirm("Delete this deliverable?")) return;
+    await supabase.from("deliverables").delete().eq("id", id);
+    load();
+  }
+
   if (loading) return <Spinner />;
-  if (items.length === 0) return <Empty msg="No deliverables yet." />;
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-      {items.map(d => (
-        <div key={d.id} style={{ background: "#ffffff", border: `1px solid ${d.delivered ? "#4ade8025" : "#e8e8e8"}`, borderRadius: "12px", padding: "16px 20px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
-            <div style={{ width: "38px", height: "38px", borderRadius: "10px", background: d.delivered ? "#4ade8015" : "#ff6b6b15", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px", flexShrink: 0 }}>
-              {d.delivered ? "✓" : "⏳"}
-            </div>
-            <div>
-              <div style={{ fontSize: "13px", fontWeight: 600, color: "#111111" }}>{d.name}</div>
-              <div style={{ fontSize: "11px", color: "#888888", marginTop: "2px" }}>{d.profiles?.full_name || "—"} · Due {d.due_date}</div>
-            </div>
+    <div>
+      {canAdd && (
+        <div style={{ marginBottom: "16px", display: "flex", justifyContent: "flex-end" }}>
+          <button onClick={() => setShowAdd(!showAdd)} style={{ padding: "8px 18px", background: "#FFD60015", border: "1px solid #FFD60030", borderRadius: "10px", color: "#FFD600", fontSize: "12px", fontWeight: 600, cursor: "pointer" }}>+ Add Deliverable</button>
+        </div>
+      )}
+
+      {showAdd && (
+        <div style={{ background: "#ffffff", border: "1px solid #FFD60030", borderRadius: "14px", padding: "20px", marginBottom: "16px", boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}>
+          <div style={{ fontSize: "12px", color: "#FFD600", fontWeight: 700, marginBottom: "14px" }}>New Deliverable</div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "10px" }}>
+            <Input label="Deliverable Name" value={form.name} onChange={v => setForm({ ...form, name: v })} placeholder="e.g. Final video edit" />
+            <Input label="Due Date" value={form.due_date} onChange={v => setForm({ ...form, due_date: v })} type="date" />
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-            <span style={{ fontSize: "11px", fontWeight: 700, color: d.delivered ? "#4ade80" : "#ff6b6b", textTransform: "uppercase" }}>
-              {d.delivered ? "Delivered" : "Pending"}
-            </span>
-            <button onClick={() => toggle(d.id, d.delivered)} style={{ padding: "5px 12px", background: "transparent", border: "1px solid #e8e8e8", borderRadius: "7px", color: "#666666", fontSize: "11px", cursor: "pointer" }}>
-              {d.delivered ? "Mark Pending" : "Mark Delivered"}
-            </button>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "14px" }}>
+            <Select label="Client" value={form.client_id} onChange={v => setForm({ ...form, client_id: v })}
+              options={[{ value: "", label: "Select client" }, ...clients.map(c => ({ value: c.id, label: c.name }))]} />
+            <Select label="Assigned To" value={form.profile_id} onChange={v => setForm({ ...form, profile_id: v })}
+              options={[{ value: "", label: "Select person (optional)" }, ...employees.map(e => ({ value: e.id, label: e.full_name }))]} />
+          </div>
+          <div style={{ display: "flex", gap: "8px" }}>
+            <button onClick={addDeliverable} style={{ padding: "8px 18px", background: "#FFD600", border: "none", borderRadius: "8px", color: "#000", fontSize: "12px", fontWeight: 700, cursor: "pointer" }}>Save</button>
+            <button onClick={() => setShowAdd(false)} style={{ padding: "8px 18px", background: "transparent", border: "1px solid #e8e8e8", borderRadius: "8px", color: "#666666", fontSize: "12px", cursor: "pointer" }}>Cancel</button>
           </div>
         </div>
-      ))}
+      )}
+
+      {items.length === 0 ? <Empty msg="No deliverables yet. Add your first one above!" /> : (
+        <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+          {items.map(d => (
+            <div key={d.id} style={{ background: "#ffffff", border: `1px solid ${d.delivered ? "#4ade8025" : "#e8e8e8"}`, borderRadius: "12px", padding: "16px 20px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+                <div style={{ width: "38px", height: "38px", borderRadius: "10px", background: d.delivered ? "#4ade8015" : "#ff6b6b15", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px", flexShrink: 0 }}>
+                  {d.delivered ? "✓" : "⏳"}
+                </div>
+                <div>
+                  <div style={{ fontSize: "13px", fontWeight: 600, color: "#111111" }}>{d.name}</div>
+                  <div style={{ fontSize: "11px", color: "#888888", marginTop: "2px" }}>
+                    {d.clients?.name || "—"} · {d.profiles?.full_name || "—"} · Due {d.due_date || "—"}
+                  </div>
+                </div>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <span style={{ fontSize: "11px", fontWeight: 700, color: d.delivered ? "#4ade80" : "#ff6b6b", textTransform: "uppercase" }}>
+                  {d.delivered ? "Delivered" : "Pending"}
+                </span>
+                <button onClick={() => toggle(d.id, d.delivered)} style={{ padding: "5px 12px", background: "transparent", border: "1px solid #e8e8e8", borderRadius: "7px", color: "#666666", fontSize: "11px", cursor: "pointer" }}>
+                  {d.delivered ? "Mark Pending" : "Mark Delivered"}
+                </button>
+                {canAdd && (
+                  <button onClick={() => deleteDeliverable(d.id)} style={{ padding: "5px 8px", background: "transparent", border: "1px solid #ff444430", borderRadius: "6px", color: "#ff6b6b", fontSize: "11px", cursor: "pointer" }}>🗑️</button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
