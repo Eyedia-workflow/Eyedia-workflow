@@ -151,6 +151,7 @@ function AuthScreen({ onLogin }) {
 function OverviewView({ bizFilter, bizColor, profile, clientMembers }) {
   const [employees, setEmployees] = useState([]);
   const [clients, setClients] = useState([]);
+  const [allClientMembers, setAllClientMembers] = useState([]);
   const [loading, setLoading] = useState(true);
   const role = getRole(profile, clientMembers);
 
@@ -159,17 +160,18 @@ function OverviewView({ bizFilter, bizColor, profile, clientMembers }) {
       setLoading(true);
       let projQuery = supabase.from("clients").select("*").eq("business", bizFilter);
       if (role === "manager") {
-        // FIX: was manager_id, should be profile_id
         const { data: mp } = await supabase.from("client_members").select("client_id").eq("profile_id", profile.id).ilike("project_role", "%manager%");
         const ids = (mp || []).map(r => r.client_id);
         if (ids.length) projQuery = projQuery.in("id", ids); else { setClients([]); setLoading(false); return; }
       }
-      const [{ data: emps }, { data: projs }] = await Promise.all([
+      const [{ data: emps }, { data: projs }, { data: cm }] = await Promise.all([
         supabase.from("profiles").select("*").eq("business", bizFilter),
         projQuery,
+        supabase.from("client_members").select("*, clients(name)"),
       ]);
       setEmployees(emps || []);
       setClients(projs || []);
+      setAllClientMembers(cm || []);
       setLoading(false);
     }
     load();
@@ -199,18 +201,37 @@ function OverviewView({ bizFilter, bizColor, profile, clientMembers }) {
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
         <div style={{ background: "#ffffff", border: "1px solid #e8e8e8", borderRadius: "14px", padding: "20px" }}>
           <div style={{ fontSize: "10px", color: "#666666", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1.2px", marginBottom: "16px" }}>Team</div>
-          {employees.length === 0 ? <Empty msg="No team members yet" /> : employees.map(emp => (
-            <div key={emp.id} style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "12px" }}>
-              <div style={{ width: "32px", height: "32px", borderRadius: "9px", background: `${bizColor}20`, color: bizColor, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "10px", fontWeight: 700, flexShrink: 0 }}>
-                {emp.full_name?.split(" ").map(n => n[0]).join("").slice(0, 2)}
+          {employees.length === 0 ? <Empty msg="No team members yet" /> : employees.map(emp => {
+            const empAssignments = allClientMembers.filter(m => m.profile_id === emp.id);
+            return (
+              <div key={emp.id} style={{ display: "flex", alignItems: "flex-start", gap: "10px", marginBottom: "14px" }}>
+                <div style={{ width: "32px", height: "32px", borderRadius: "9px", background: `${bizColor}20`, color: bizColor, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "10px", fontWeight: 700, flexShrink: 0, marginTop: "2px" }}>
+                  {emp.full_name?.split(" ").map(n => n[0]).join("").slice(0, 2)}
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: "12px", fontWeight: 600, color: "#111111" }}>{emp.full_name}</div>
+                  <div style={{ fontSize: "10px", color: "#888888", marginBottom: "4px" }}>{emp.role}</div>
+                  {empAssignments.length > 0 && (
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: "4px" }}>
+                      {empAssignments.map(a => {
+                        const isManager = a.project_role?.toLowerCase().includes("manager");
+                        return (
+                          <span key={a.id} style={{
+                            fontSize: "9px", fontWeight: 700, padding: "2px 7px", borderRadius: "8px",
+                            background: isManager ? "#00C9CC15" : "#88888815",
+                            color: isManager ? "#00C9CC" : "#888888",
+                            border: `1px solid ${isManager ? "#00C9CC25" : "#88888825"}`,
+                          }}>
+                            {a.clients?.name} · {a.project_role}
+                          </span>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
               </div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: "12px", fontWeight: 600, color: "#111111" }}>{emp.full_name}</div>
-                <div style={{ fontSize: "10px", color: "#888888" }}>{emp.role}</div>
-              </div>
-              <RolePill profile={emp} clientMembers={clientMembers} />
-            </div>
-          ))}
+            );
+          })}
         </div>
         <div style={{ background: "#ffffff", border: "1px solid #e8e8e8", borderRadius: "14px", padding: "20px" }}>
           <div style={{ fontSize: "10px", color: "#666666", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1.2px", marginBottom: "16px" }}>
