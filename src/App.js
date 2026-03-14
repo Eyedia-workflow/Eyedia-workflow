@@ -312,7 +312,11 @@ function TasksView({ bizFilter, profile, clientMembers }) {
 
   async function submitLink(id, link) {
     if (!link) return;
-    await supabase.from("tasks").update({ delivery_link: link, status: "submitted" }).eq("id", id);
+    const { error } = await supabase.from("tasks").update({ delivery_link: link, status: "submitted" }).eq("id", id);
+    if (error) {
+      alert("\u274c Could not save link: " + error.message);
+      return;
+    }
     load();
   }
 
