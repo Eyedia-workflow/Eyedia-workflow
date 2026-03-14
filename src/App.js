@@ -397,29 +397,42 @@ function TasksView({ bizFilter, profile, clientMembers }) {
               )}
 
               <div>
-                {task.status === "submitted" && task.delivery_link ? (
+                {/* If a delivery link exists — always show it regardless of status */}
+                {task.delivery_link ? (
                   <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                    <a href={task.delivery_link} target="_blank" rel="noreferrer" style={{ fontSize: "12px", color: "#a855f7", fontWeight: 600, textDecoration: "none" }}>🔗 Review Delivery</a>
-                    {canAdd && (
+                    <a href={task.delivery_link} target="_blank" rel="noreferrer"
+                      style={{ fontSize: "12px", color: task.status === "done" ? "#4ade80" : "#a855f7", fontWeight: 600, textDecoration: "none" }}>
+                      {task.status === "done" ? "🔗 View Delivery" : "🔗 Review Delivery"}
+                    </a>
+                    {/* Approve/Reject — show to owner/manager if not yet done */}
+                    {canAdd && task.status !== "done" && (
                       <div style={{ display: "flex", gap: "8px" }}>
                         <button onClick={() => approveTask(task.id)} style={{ flex: 1, padding: "8px", background: "#4ade8015", border: "1px solid #4ade8030", borderRadius: "8px", color: "#4ade80", fontSize: "12px", fontWeight: 600, cursor: "pointer" }}>✅ Approve</button>
                         <button onClick={() => rejectTask(task.id)} style={{ flex: 1, padding: "8px", background: "#ff444415", border: "1px solid #ff444430", borderRadius: "8px", color: "#ff6b6b", fontSize: "12px", fontWeight: 600, cursor: "pointer" }}>❌ Reject</button>
                       </div>
                     )}
-                  </div>
-                ) : task.status === "done" && task.delivery_link ? (
-                  <a href={task.delivery_link} target="_blank" rel="noreferrer" style={{ fontSize: "12px", color: "#4ade80", fontWeight: 600, textDecoration: "none" }}>🔗 View Delivery</a>
-                ) : task.status === "rejected" ? (
-                  <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                    <div style={{ fontSize: "11px", color: "#ff6b6b" }}>❌ {task.rejection_note || "Rejected — please resubmit"}</div>
-                    {task.assigned_to === profile.id && (
-                      <div style={{ display: "flex", gap: "8px" }}>
-                        <input value={linkInputs[task.id] || ""} onChange={e => setLinkInputs(p => ({ ...p, [task.id]: e.target.value }))}
-                          placeholder="New link..." style={{ flex: 1, background: "#f8f8f8", border: "1px solid #ff444430", borderRadius: "8px", padding: "8px 12px", color: "#111111", fontSize: "12px", outline: "none" }} />
-                        <button onClick={() => { submitLink(task.id, linkInputs[task.id]); setLinkInputs(p => ({ ...p, [task.id]: "" })); }}
-                          style={{ padding: "8px 14px", background: "#FFD60015", border: "1px solid #FFD60030", borderRadius: "8px", color: "#FFD600", fontSize: "12px", fontWeight: 600, cursor: "pointer" }}>↩ Resubmit</button>
+                    {/* Assignee can resubmit if rejected */}
+                    {task.status === "rejected" && task.assigned_to === profile.id && (
+                      <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                        <div style={{ fontSize: "11px", color: "#ff6b6b" }}>❌ {task.rejection_note || "Rejected — please resubmit"}</div>
+                        <div style={{ display: "flex", gap: "8px" }}>
+                          <input value={linkInputs[task.id] || ""} onChange={e => setLinkInputs(p => ({ ...p, [task.id]: e.target.value }))}
+                            placeholder="New link..." style={{ flex: 1, background: "#f8f8f8", border: "1px solid #ff444430", borderRadius: "8px", padding: "8px 12px", color: "#111111", fontSize: "12px", outline: "none" }} />
+                          <button onClick={() => { submitLink(task.id, linkInputs[task.id]); setLinkInputs(p => ({ ...p, [task.id]: "" })); }}
+                            style={{ padding: "8px 14px", background: "#FFD60015", border: "1px solid #FFD60030", borderRadius: "8px", color: "#FFD600", fontSize: "12px", fontWeight: 600, cursor: "pointer" }}>↩ Resubmit</button>
+                        </div>
                       </div>
                     )}
+                  </div>
+                ) : task.status === "rejected" && task.assigned_to === profile.id ? (
+                  <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                    <div style={{ fontSize: "11px", color: "#ff6b6b" }}>❌ {task.rejection_note || "Rejected — please resubmit"}</div>
+                    <div style={{ display: "flex", gap: "8px" }}>
+                      <input value={linkInputs[task.id] || ""} onChange={e => setLinkInputs(p => ({ ...p, [task.id]: e.target.value }))}
+                        placeholder="New link..." style={{ flex: 1, background: "#f8f8f8", border: "1px solid #ff444430", borderRadius: "8px", padding: "8px 12px", color: "#111111", fontSize: "12px", outline: "none" }} />
+                      <button onClick={() => { submitLink(task.id, linkInputs[task.id]); setLinkInputs(p => ({ ...p, [task.id]: "" })); }}
+                        style={{ padding: "8px 14px", background: "#FFD60015", border: "1px solid #FFD60030", borderRadius: "8px", color: "#FFD600", fontSize: "12px", fontWeight: 600, cursor: "pointer" }}>↩ Resubmit</button>
+                    </div>
                   </div>
                 ) : task.assigned_to === profile.id ? (
                   <div style={{ display: "flex", gap: "8px" }}>
