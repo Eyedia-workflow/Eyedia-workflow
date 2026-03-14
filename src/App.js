@@ -428,15 +428,17 @@ function TasksView({ bizFilter, profile, clientMembers }) {
                       </div>
                     )}
                   </div>
-                ) : task.status === "rejected" && task.assigned_to === profile.id ? (
+                ) : task.status === "rejected" ? (
                   <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                    <div style={{ fontSize: "11px", color: "#ff6b6b" }}>❌ {task.rejection_note || "Rejected — please resubmit"}</div>
-                    <div style={{ display: "flex", gap: "8px" }}>
-                      <input value={linkInputs[task.id] || ""} onChange={e => setLinkInputs(p => ({ ...p, [task.id]: e.target.value }))}
-                        placeholder="New link..." style={{ flex: 1, background: "#f8f8f8", border: "1px solid #ff444430", borderRadius: "8px", padding: "8px 12px", color: "#111111", fontSize: "12px", outline: "none" }} />
-                      <button onClick={() => { submitLink(task.id, linkInputs[task.id]); setLinkInputs(p => ({ ...p, [task.id]: "" })); }}
-                        style={{ padding: "8px 14px", background: "#FFD60015", border: "1px solid #FFD60030", borderRadius: "8px", color: "#FFD600", fontSize: "12px", fontWeight: 600, cursor: "pointer" }}>↩ Resubmit</button>
-                    </div>
+                    <div style={{ fontSize: "11px", color: "#ff6b6b", fontWeight: 600 }}>❌ Rejected: {task.rejection_note || "Please resubmit"}</div>
+                    {task.assigned_to === profile.id && (
+                      <div style={{ display: "flex", gap: "8px" }}>
+                        <input value={linkInputs[task.id] || ""} onChange={e => setLinkInputs(p => ({ ...p, [task.id]: e.target.value }))}
+                          placeholder="New link..." style={{ flex: 1, background: "#f8f8f8", border: "1px solid #ff444430", borderRadius: "8px", padding: "8px 12px", color: "#111111", fontSize: "12px", outline: "none" }} />
+                        <button onClick={() => { submitLink(task.id, linkInputs[task.id]); setLinkInputs(p => ({ ...p, [task.id]: "" })); }}
+                          style={{ padding: "8px 14px", background: "#FFD60015", border: "1px solid #FFD60030", borderRadius: "8px", color: "#FFD600", fontSize: "12px", fontWeight: 600, cursor: "pointer" }}>↩ Resubmit</button>
+                      </div>
+                    )}
                   </div>
                 ) : task.assigned_to === profile.id ? (
                   <div style={{ display: "flex", gap: "8px" }}>
