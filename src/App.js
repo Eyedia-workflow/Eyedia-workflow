@@ -151,6 +151,7 @@ function AuthScreen({ onLogin }) {
 function OverviewView({ bizFilter, bizColor, profile, clientMembers }) {
   const [employees, setEmployees] = useState([]);
   const [clients, setClients] = useState([]);
+  const [tasks, setTasks] = useState([]);
   const [allClientMembers, setAllClientMembers] = useState([]);
   const [loading, setLoading] = useState(true);
   const role = getRole(profile, clientMembers);
@@ -164,18 +165,46 @@ function OverviewView({ bizFilter, bizColor, profile, clientMembers }) {
         const ids = (mp || []).map(r => r.client_id);
         if (ids.length) projQuery = projQuery.in("id", ids); else { setClients([]); setLoading(false); return; }
       }
-      const [{ data: emps }, { data: projs }, { data: cm }] = await Promise.all([
+      const [{ data: emps }, { data: projs }, { data: cm }, { data: t }] = await Promise.all([
         supabase.from("profiles").select("*").eq("business", bizFilter),
         projQuery,
         supabase.from("client_members").select("*, clients(name)"),
+        supabase.from("tasks").select("*").eq("business", bizFilter),
       ]);
       setEmployees(emps || []);
       setClients(projs || []);
       setAllClientMembers(cm || []);
+      setTasks(t || []);
       setLoading(false);
     }
     load();
   }, [bizFilter]);
+
+  // Calculate live status and progress for each client from tasks
+  function getClientStats(clientId) {
+    const clientTasks = tasks.filter(t => t.client_id === clientId);
+    if (clientTasks.length === 0) return { status: "on-track", progress: 0 };
+    const done = clientTasks.filter(t => t.status === "done").length;
+    const progress = Math.round((done / clientTasks.length) * 100);
+    const today = new Date();
+    let status = "on-track";
+    if (done === clientTasks.length) {
+      status = "completed";
+    } else {
+      for (const t of clientTasks) {
+        if (t.status === "done") continue;
+        if (!t.deadline) continue;
+        const daysLeft = Math.ceil((new Date(t.deadline) - today) / (1000 * 60 * 60 * 24));
+        if (daysLeft < 0) { status = "critical"; break; }
+        if (daysLeft <= 3 && status !== "critical") status = "critical";
+        else if (daysLeft <= 7 && status === "on-track") status = "at-risk";
+      }
+    }
+    return { status, progress };
+  }
+
+  // Enrich clients with live stats
+  const enrichedClients = clients.map(c => ({ ...c, ...getClientStats(c.id) }));
 
   if (loading) return <Spinner />;
 
@@ -184,9 +213,9 @@ function OverviewView({ bizFilter, bizColor, profile, clientMembers }) {
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px", marginBottom: "24px" }}>
         {[
           { label: "Team Members", value: employees.length, sub: `in ${bizFilter}`, color: bizColor, icon: "◈" },
-          { label: "Active Clients", value: clients.length, sub: `${clients.filter(p => p.status === "completed").length} completed`, color: "#4ade80", icon: "◻" },
-          { label: "Critical", value: clients.filter(p => p.status === "critical").length, sub: "need attention", color: "#ff6b6b", icon: "⚠" },
-          { label: "On Track", value: clients.filter(p => p.status === "on-track").length, sub: "running smoothly", color: "#888", icon: "✦" },
+          { label: "Active Clients", value: enrichedClients.filter(p => p.status !== "completed").length, sub: `${enrichedClients.filter(p => p.status === "completed").length} completed`, color: "#4ade80", icon: "◻" },
+          { label: "Critical", value: enrichedClients.filter(p => p.status === "critical").length, sub: "need attention", color: "#ff6b6b", icon: "⚠" },
+          { label: "On Track", value: enrichedClients.filter(p => p.status === "on-track").length, sub: "running smoothly", color: "#888", icon: "✦" },
         ].map((s, i) => (
           <div key={i} style={{ background: "#ffffff", border: "1px solid #e8e8e8", borderRadius: "14px", padding: "18px 20px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "10px" }}>
@@ -237,16 +266,21 @@ function OverviewView({ bizFilter, bizColor, profile, clientMembers }) {
           <div style={{ fontSize: "10px", color: "#666666", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1.2px", marginBottom: "16px" }}>
             {role === "manager" ? "Your Clients" : "All Clients"}
           </div>
-          {clients.length === 0 ? <Empty msg="No clients yet" /> : clients.map(p => {
-            const barColor = p.status === "critical" ? "#ff6b6b" : p.status === "at-risk" ? "#00C9CC" : bizColor;
+          {enrichedClients.length === 0 ? <Empty msg="No clients yet" /> : enrichedClients.map(p => {
+            const barColor = p.status === "critical" ? "#ff6b6b" : p.status === "at-risk" ? "#00C9CC" : p.status === "completed" ? "#4ade80" : bizColor;
+            const clientTasks = tasks.filter(t => t.client_id === p.id);
+            const doneTasks = clientTasks.filter(t => t.status === "done").length;
             return (
               <div key={p.id} style={{ marginBottom: "16px" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "6px" }}>
                   <div>
                     <div style={{ fontSize: "12px", fontWeight: 600, color: "#111111" }}>{p.name}</div>
-                    <div style={{ fontSize: "10px", color: "#888888" }}>{p.deadline}</div>
+                    <div style={{ fontSize: "10px", color: "#888888" }}>{doneTasks}/{clientTasks.length} tasks done</div>
                   </div>
-                  <span style={{ fontSize: "12px", color: barColor, fontWeight: 700 }}>{p.progress}%</span>
+                  <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                    <Badge status={p.status} />
+                    <span style={{ fontSize: "12px", color: barColor, fontWeight: 700 }}>{p.progress}%</span>
+                  </div>
                 </div>
                 <ProgressBar value={p.progress} color={barColor} />
               </div>
