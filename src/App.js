@@ -327,7 +327,8 @@ function TasksView({ bizFilter, profile, clientMembers }) {
 
   async function rejectTask(id) {
     const reason = window.prompt("Reason for rejection (optional):");
-    await supabase.from("tasks").update({ status: "in-progress", delivery_link: null, rejection_note: reason || "Rejected by manager" }).eq("id", id);
+    const { error } = await supabase.from("tasks").update({ status: "rejected", delivery_link: null, rejection_note: reason || "Rejected by manager" }).eq("id", id);
+    if (error) { alert("❌ " + error.message); return; }
     load();
   }
 
