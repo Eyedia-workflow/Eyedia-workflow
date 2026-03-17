@@ -509,7 +509,7 @@ function OverviewView({ bizFilter, bizColor, profile, clientMembers }) {
                   <div style={{ fontSize: "12px", fontWeight: 600, color: "#111111" }}>{emp.full_name}</div>
                   <div style={{ fontSize: "10px", color: "#888888", marginBottom: "4px" }}>{emp.role}</div>
                   {emp.is_owner ? (
-                    {(() => {
+                    (() => {
                       const t = emp.title?.toLowerCase();
                       const c = t === "director" ? "#00C9CC" : t === "ceo" ? "#ff6b6b" : "#FFD600";
                       return (
@@ -517,7 +517,7 @@ function OverviewView({ bizFilter, bizColor, profile, clientMembers }) {
                           {emp.title || "CEO"} · All Clients
                         </span>
                       );
-                    })()}
+                    })()
                   ) : empAssignments.length > 0 ? (
                     <div style={{ display: "flex", flexWrap: "wrap", gap: "4px" }}>
                       {empAssignments.map(a => {
