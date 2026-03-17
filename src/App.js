@@ -72,8 +72,11 @@ function RolePill({ profile, clientMembers }) {
   const role = getRole(profile, clientMembers || []);
   const rb = ROLE_BADGE[role];
   const label = role === "owner" ? getOwnerLabel(profile) : rb.label;
+  const title = profile?.title?.toLowerCase();
+  const ownerColor = title === "director" ? "#00C9CC" : title === "ceo" ? "#ff6b6b" : "#FFD600";
+  const color = role === "owner" ? ownerColor : rb.color;
   return (
-    <span style={{ fontSize: "9px", color: rb.color, background: `${rb.color}15`, padding: "2px 8px", borderRadius: "10px", fontWeight: 700, letterSpacing: "0.5px" }}>{label}</span>
+    <span style={{ fontSize: "9px", color: color, background: `${color}15`, padding: "2px 8px", borderRadius: "10px", fontWeight: 700, letterSpacing: "0.5px" }}>{label}</span>
   );
 }
 
@@ -506,9 +509,15 @@ function OverviewView({ bizFilter, bizColor, profile, clientMembers }) {
                   <div style={{ fontSize: "12px", fontWeight: 600, color: "#111111" }}>{emp.full_name}</div>
                   <div style={{ fontSize: "10px", color: "#888888", marginBottom: "4px" }}>{emp.role}</div>
                   {emp.is_owner ? (
-                    <span style={{ fontSize: "9px", fontWeight: 700, padding: "2px 7px", borderRadius: "8px", background: "#00C9CC15", color: "#00C9CC", border: "1px solid #00C9CC25" }}>
-                      {emp.title || "CEO"} · All Clients
-                    </span>
+                    {(() => {
+                      const t = emp.title?.toLowerCase();
+                      const c = t === "director" ? "#00C9CC" : t === "ceo" ? "#ff6b6b" : "#FFD600";
+                      return (
+                        <span style={{ fontSize: "9px", fontWeight: 700, padding: "2px 7px", borderRadius: "8px", background: `${c}15`, color: c, border: `1px solid ${c}25` }}>
+                          {emp.title || "CEO"} · All Clients
+                        </span>
+                      );
+                    })()}
                   ) : empAssignments.length > 0 ? (
                     <div style={{ display: "flex", flexWrap: "wrap", gap: "4px" }}>
                       {empAssignments.map(a => {
