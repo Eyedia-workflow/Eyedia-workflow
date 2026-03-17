@@ -496,7 +496,7 @@ function OverviewView({ bizFilter, bizColor, profile, clientMembers }) {
                   <div style={{ fontSize: "12px", fontWeight: 600, color: "#111111" }}>{emp.full_name}</div>
                   <div style={{ fontSize: "10px", color: "#888888", marginBottom: "4px" }}>{emp.role}</div>
                   {emp.is_owner ? (
-                    <span style={{ fontSize: "9px", fontWeight: 700, padding: "2px 7px", borderRadius: "8px", background: "#FFD60015", color: "#FFD600", border: "1px solid #FFD60025" }}>
+                    <span style={{ fontSize: "9px", fontWeight: 700, padding: "2px 7px", borderRadius: "8px", background: "#00C9CC15", color: "#00C9CC", border: "1px solid #00C9CC25" }}>
                       CEO · All Clients
                     </span>
                   ) : empAssignments.length > 0 ? (
@@ -506,9 +506,9 @@ function OverviewView({ bizFilter, bizColor, profile, clientMembers }) {
                         return (
                           <span key={a.id} style={{
                             fontSize: "9px", fontWeight: 700, padding: "2px 7px", borderRadius: "8px",
-                            background: isManager ? "#00C9CC15" : "#88888815",
-                            color: isManager ? "#00C9CC" : "#888888",
-                            border: `1px solid ${isManager ? "#00C9CC25" : "#88888825"}`,
+                            background: isManager ? "#FFD60015" : "#88888815",
+                            color: isManager ? "#FFD600" : "#888888",
+                            border: `1px solid ${isManager ? "#FFD60025" : "#88888825"}`,
                           }}>
                             {a.clients?.name} · {a.project_role}
                           </span>
