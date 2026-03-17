@@ -25,10 +25,19 @@ const ROLE_BADGE = {
   employee: { color: "#888",    label: "TEAM MEMBER" },
 };
 
+function getOwnerLabel(profile) {
+  return (profile?.title || "CEO").toUpperCase();
+}
+
 function getRole(profile, clientMembers) {
   if (profile?.is_owner) return "owner";
   if (clientMembers?.some(m => m.profile_id === profile?.id && m.project_role?.toLowerCase().includes("manager"))) return "manager";
   return "employee";
+}
+
+function getDisplayTitle(profile) {
+  if (!profile?.is_owner) return null;
+  return profile.title || "CEO";
 }
 
 function getClientRole(profileId, clientId, clientMembers) {
@@ -62,8 +71,9 @@ function Badge({ status }) {
 function RolePill({ profile, clientMembers }) {
   const role = getRole(profile, clientMembers || []);
   const rb = ROLE_BADGE[role];
+  const label = role === "owner" ? getOwnerLabel(profile) : rb.label;
   return (
-    <span style={{ fontSize: "9px", color: rb.color, background: `${rb.color}15`, padding: "2px 8px", borderRadius: "10px", fontWeight: 700, letterSpacing: "0.5px" }}>{rb.label}</span>
+    <span style={{ fontSize: "9px", color: rb.color, background: `${rb.color}15`, padding: "2px 8px", borderRadius: "10px", fontWeight: 700, letterSpacing: "0.5px" }}>{label}</span>
   );
 }
 
@@ -497,7 +507,7 @@ function OverviewView({ bizFilter, bizColor, profile, clientMembers }) {
                   <div style={{ fontSize: "10px", color: "#888888", marginBottom: "4px" }}>{emp.role}</div>
                   {emp.is_owner ? (
                     <span style={{ fontSize: "9px", fontWeight: 700, padding: "2px 7px", borderRadius: "8px", background: "#00C9CC15", color: "#00C9CC", border: "1px solid #00C9CC25" }}>
-                      CEO · All Clients
+                      {emp.title || "CEO"} · All Clients
                     </span>
                   ) : empAssignments.length > 0 ? (
                     <div style={{ display: "flex", flexWrap: "wrap", gap: "4px" }}>
@@ -1146,6 +1156,7 @@ function AdminView({ bizFilter, bizColor }) {
   const [newRole, setNewRole] = useState("");
   const [newBiz, setNewBiz] = useState("digital");
   const [newPass, setNewPass] = useState("");
+  const [newTitle, setNewTitle] = useState("");
 
   // Assignment form
   const [assignClient, setAssignClient] = useState("");
@@ -1317,6 +1328,10 @@ function AdminView({ bizFilter, bizColor }) {
                 <label style={labelStyle}>Password</label>
                 <input style={inputStyle} value={newPass} onChange={e => setNewPass(e.target.value)} placeholder="TempPass123!" />
               </div>
+              <div>
+                <label style={labelStyle}>Display Title (optional)</label>
+                <input style={inputStyle} value={newTitle} onChange={e => setNewTitle(e.target.value)} placeholder="e.g. Director, CEO (for owners only)" />
+              </div>
             </div>
             <button style={btnStyle} onClick={async () => {
               if (!newName || !newEmail || !newRole) return flash("❌ Please fill all fields");
@@ -1328,13 +1343,13 @@ function AdminView({ bizFilter, bizColor }) {
                   "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ib2plZ2JweXpmaGZlcW9pZWJuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5OTQ2NjQsImV4cCI6MjA4ODU3MDY2NH0.TtHMGuKqpSpE8sPaSLVhdXi5yKTJEaWsMx7cdqTGpek",
                   "apikey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ib2plZ2JweXpmaGZlcW9pZWJuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5OTQ2NjQsImV4cCI6MjA4ODU3MDY2NH0.TtHMGuKqpSpE8sPaSLVhdXi5yKTJEaWsMx7cdqTGpek"
                 },
-                body: JSON.stringify({ email: newEmail, password: pass, full_name: newName, role: newRole, business: newBiz })
+                body: JSON.stringify({ email: newEmail, password: pass, full_name: newName, role: newRole, business: newBiz, title: newTitle || null })
               });
               let data;
               try { data = await res.json(); } catch(e) { flash("❌ Response error: " + res.status + " " + res.statusText); return; }
               if (data.error) flash("❌ " + data.error);
               else if (!res.ok) flash("❌ HTTP " + res.status + ": " + JSON.stringify(data));
-              else { flash("✅ " + newName + " added! Password: " + pass); setNewName(""); setNewEmail(""); setNewRole(""); setNewPass(""); loadAll(); }
+              else { flash("✅ " + newName + " added! Password: " + pass); setNewName(""); setNewEmail(""); setNewRole(""); setNewPass(""); setNewTitle(""); loadAll(); }
             }}>Add Team Member</button>
           </div>
           {loading ? <Spinner /> : team.map(p => (
@@ -1344,7 +1359,8 @@ function AdminView({ bizFilter, bizColor }) {
                 <div style={{ fontSize: "11px", color: "#666666", marginTop: "3px" }}>{p.role} · {p.business}</div>
                 <div style={{ fontSize: "11px", color: "#999999", marginTop: "2px" }}>{clientMembers.filter(m => m.profile_id === p.id).map(m => m.clients?.name).join(", ") || "No clients assigned"}</div>
               </div>
-              <button style={dangerBtn} onClick={() => deleteEmployee(p.id)}>🗑️ Remove</button>
+              {!p.is_owner && <button style={dangerBtn} onClick={() => deleteEmployee(p.id)}>🗑️ Remove</button>}
+              {p.is_owner && profile?.title && <span style={{ fontSize: "10px", color: "#aaa" }}>Protected</span>}
             </div>
           ))}
         </div>
@@ -1603,7 +1619,7 @@ export default function EyediaApp() {
             <div style={{ padding: "10px", background: `${bizColor}08`, border: `1px solid ${bizColor}15`, borderRadius: "9px" }}>
               <div style={{ fontSize: "9px", color: bizColor, fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px", marginBottom: "4px" }}>Active</div>
               <div style={{ fontSize: "12px", fontWeight: 700, color: "#111111" }}>{bizName}</div>
-              <div style={{ fontSize: "10px", color: "#888888", marginTop: "2px" }}>{role === "owner" ? "Owner" : role === "manager" ? "Manager" : profile?.role}</div>
+              <div style={{ fontSize: "10px", color: "#888888", marginTop: "2px" }}>{role === "owner" ? (profile?.title || "CEO") : role === "manager" ? "Manager" : profile?.role}</div>
             </div>
           </div>
         </div>
