@@ -300,7 +300,7 @@ function TasksView({ bizFilter, profile, clientMembers }) {
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
   const [linkInputs, setLinkInputs] = useState({});
-  const [form, setForm] = useState({ title: "", description: "", assigned_to: "", client_id: "", deadline: "", status: "pending" });
+  const [form, setForm] = useState({ title: "", description: "", assigned_to: "", client_id: "", deadline: "", status: "pending", priority: "normal" });
   const role = getRole(profile, clientMembers);
   const canAdd = role === "owner" || role === "manager";
 
@@ -412,8 +412,10 @@ function TasksView({ bizFilter, profile, clientMembers }) {
             <Select label="Client" value={form.client_id} onChange={v => setForm({ ...form, client_id: v })}
               options={[{ value: "", label: "Select client" }, ...clients.map(p => ({ value: p.id, label: p.name }))]} />
           </div>
-          <div style={{ marginBottom: "14px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "10px" }}>
             <Input label="Description (optional)" value={form.description} onChange={v => setForm({ ...form, description: v })} placeholder="Brief description..." />
+            <Select label="Priority" value={form.priority} onChange={v => setForm({ ...form, priority: v })}
+              options={[{ value: "urgent", label: "🔴 Urgent" }, { value: "high", label: "🟠 High" }, { value: "normal", label: "🔵 Normal" }, { value: "low", label: "⚪ Low" }]} />
           </div>
           <div style={{ display: "flex", gap: "8px" }}>
             <button onClick={addTask} style={{ padding: "8px 18px", background: "#FFD600", border: "none", borderRadius: "8px", color: "#000", fontSize: "12px", fontWeight: 700, cursor: "pointer" }}>Save Task</button>
@@ -441,10 +443,14 @@ function TasksView({ bizFilter, profile, clientMembers }) {
                 </div>
               </div>
 
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "12px", marginBottom: "12px" }}>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "12px", marginBottom: "12px", alignItems: "center" }}>
                 <div style={{ fontSize: "11px", color: "#666666" }}>👤 {task.profiles?.full_name || "—"}</div>
                 <div style={{ fontSize: "11px", color: "#666666" }}>📁 {task.clients?.name || "—"}</div>
                 <div style={{ fontSize: "11px", color: "#666666" }}>📅 {task.deadline || "—"}</div>
+                {task.priority && task.priority !== "normal" && (() => {
+                  const p = { urgent: { color: "#ff4444", bg: "#ff444415", label: "🔴 Urgent" }, high: { color: "#ff8c00", bg: "#ff8c0015", label: "🟠 High" }, low: { color: "#888888", bg: "#88888815", label: "⚪ Low" } }[task.priority];
+                  return p ? <span style={{ fontSize: "10px", fontWeight: 700, color: p.color, background: p.bg, padding: "2px 8px", borderRadius: "8px", border: `1px solid ${p.color}25` }}>{p.label}</span> : null;
+                })()}
               </div>
 
               {canAdd && !["submitted", "rejected", "done"].includes(task.status) && (
