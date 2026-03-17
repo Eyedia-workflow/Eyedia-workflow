@@ -1,15 +1,32 @@
 {
   "short_name": "Eyedia",
   "name": "We Are Eyedia — Workflow OS",
+  "description": "Eyedia team workflow management system",
   "icons": [
     {
       "src": "favicon.ico",
       "sizes": "64x64 32x32 24x24 16x16",
       "type": "image/x-icon"
+    },
+    {
+      "src": "logo192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "logo512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
     }
   ],
-  "start_url": ".",
+  "start_url": "/",
+  "scope": "/",
   "display": "standalone",
-  "theme_color": "#080808",
-  "background_color": "#080808"
+  "orientation": "portrait",
+  "theme_color": "#FFD600",
+  "background_color": "#f5f5f5",
+  "categories": ["productivity", "business"],
+  "prefer_related_applications": false
 }
