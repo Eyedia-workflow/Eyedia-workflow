@@ -206,16 +206,83 @@ function OverviewView({ bizFilter, bizColor, profile, clientMembers }) {
   // Enrich clients with live stats
   const enrichedClients = clients.map(c => ({ ...c, ...getClientStats(c.id) }));
 
+  // ── Chart data calculations ──
+  const totalTasks = tasks.length;
+  const doneTasks = tasks.filter(t => t.status === "done").length;
+  const inProgressTasks = tasks.filter(t => t.status === "in-progress").length;
+  const submittedTasks = tasks.filter(t => t.status === "submitted").length;
+  const overdueTasks = tasks.filter(t => {
+    if (t.status === "done") return false;
+    if (!t.deadline) return false;
+    return new Date(t.deadline) < new Date();
+  }).length;
+  const pendingTasks = tasks.filter(t => t.status === "pending").length;
+
+  // Donut chart helper
+  function DonutChart({ segments, size = 80 }) {
+    const r = 28; const cx = size/2; const cy = size/2;
+    const circumference = 2 * Math.PI * r;
+    let offset = 0;
+    const total = segments.reduce((s, seg) => s + seg.value, 0);
+    if (total === 0) return (
+      <svg width={size} height={size}><circle cx={cx} cy={cy} r={r} fill="none" stroke="#eeeeee" strokeWidth="10" /></svg>
+    );
+    return (
+      <svg width={size} height={size}>
+        <circle cx={cx} cy={cy} r={r} fill="none" stroke="#eeeeee" strokeWidth="10" />
+        {segments.map((seg, i) => {
+          const dash = (seg.value / total) * circumference;
+          const gap = circumference - dash;
+          const el = <circle key={i} cx={cx} cy={cy} r={r} fill="none" stroke={seg.color} strokeWidth="10"
+            strokeDasharray={`${dash} ${gap}`} strokeDashoffset={-offset} style={{ transform: "rotate(-90deg)", transformOrigin: "center", transition: "stroke-dasharray 0.5s ease" }} />;
+          offset += dash;
+          return el;
+        })}
+        <text x={cx} y={cy+1} textAnchor="middle" dominantBaseline="middle" style={{ fontSize: "14px", fontWeight: 800, fill: "#111", fontFamily: "Bebas Neue, sans-serif" }}>{total}</text>
+      </svg>
+    );
+  }
+
+  // Workload bar chart
+  function WorkloadBars() {
+    const workload = employees.filter(e => !e.is_owner).map(emp => ({
+      name: emp.full_name?.split(" ")[0],
+      total: tasks.filter(t => t.assigned_to === emp.id).length,
+      done: tasks.filter(t => t.assigned_to === emp.id && t.status === "done").length,
+    })).filter(w => w.total > 0).sort((a, b) => b.total - a.total);
+    const max = Math.max(...workload.map(w => w.total), 1);
+    if (workload.length === 0) return <div style={{ fontSize: "11px", color: "#aaa", textAlign: "center", padding: "20px 0" }}>No task assignments yet</div>;
+    return (
+      <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+        {workload.map((w, i) => (
+          <div key={i}>
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
+              <span style={{ fontSize: "11px", fontWeight: 600, color: "#333" }}>{w.name}</span>
+              <span style={{ fontSize: "10px", color: "#888" }}>{w.done}/{w.total} done</span>
+            </div>
+            <div style={{ height: "8px", background: "#f0f0f0", borderRadius: "4px", overflow: "hidden" }}>
+              <div style={{ height: "100%", width: `${(w.total/max)*100}%`, background: `${bizColor}40`, borderRadius: "4px", position: "relative" }}>
+                <div style={{ height: "100%", width: `${w.total > 0 ? (w.done/w.total)*100 : 0}%`, background: bizColor, borderRadius: "4px" }} />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
   if (loading) return <Spinner />;
 
   return (
-    <div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px", marginBottom: "24px" }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+
+      {/* ── Row 1: Stats ── */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px" }}>
         {[
           { label: "Team Members", value: employees.length, sub: `in ${bizFilter}`, color: bizColor, icon: "◈" },
           { label: "Active Clients", value: enrichedClients.filter(p => p.status !== "completed").length, sub: `${enrichedClients.filter(p => p.status === "completed").length} completed`, color: "#4ade80", icon: "◻" },
-          { label: "Critical", value: enrichedClients.filter(p => p.status === "critical").length, sub: "need attention", color: "#ff6b6b", icon: "⚠" },
-          { label: "On Track", value: enrichedClients.filter(p => p.status === "on-track").length, sub: "running smoothly", color: "#888", icon: "✦" },
+          { label: "Overdue Tasks", value: overdueTasks, sub: "need immediate action", color: "#ff6b6b", icon: "⚠" },
+          { label: "Done This Cycle", value: doneTasks, sub: `of ${totalTasks} total tasks`, color: bizColor, icon: "✦" },
         ].map((s, i) => (
           <div key={i} style={{ background: "#ffffff", border: "1px solid #e8e8e8", borderRadius: "14px", padding: "18px 20px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "10px" }}>
@@ -227,7 +294,77 @@ function OverviewView({ bizFilter, bizColor, profile, clientMembers }) {
           </div>
         ))}
       </div>
+
+      {/* ── Row 2: Donut + Workload ── */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+
+        {/* Tasks by status donut */}
+        <div style={{ background: "#ffffff", border: "1px solid #e8e8e8", borderRadius: "14px", padding: "20px" }}>
+          <div style={{ fontSize: "10px", color: "#666666", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1.2px", marginBottom: "16px" }}>Tasks by Status</div>
+          <div style={{ display: "flex", alignItems: "center", gap: "24px" }}>
+            <DonutChart size={90} segments={[
+              { value: doneTasks, color: "#4ade80" },
+              { value: inProgressTasks, color: bizColor },
+              { value: submittedTasks, color: "#a855f7" },
+              { value: overdueTasks, color: "#ff6b6b" },
+              { value: pendingTasks, color: "#e8e8e8" },
+            ]} />
+            <div style={{ display: "flex", flexDirection: "column", gap: "6px", flex: 1 }}>
+              {[
+                { label: "Done", value: doneTasks, color: "#4ade80" },
+                { label: "In Progress", value: inProgressTasks, color: bizColor },
+                { label: "Pending Approval", value: submittedTasks, color: "#a855f7" },
+                { label: "Overdue", value: overdueTasks, color: "#ff6b6b" },
+                { label: "Pending", value: pendingTasks, color: "#cccccc" },
+              ].map((item, i) => (
+                <div key={i} style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                  <div style={{ width: "8px", height: "8px", borderRadius: "2px", background: item.color, flexShrink: 0 }} />
+                  <span style={{ fontSize: "11px", color: "#555", flex: 1 }}>{item.label}</span>
+                  <span style={{ fontSize: "11px", fontWeight: 700, color: "#111" }}>{item.value}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Team workload */}
+        <div style={{ background: "#ffffff", border: "1px solid #e8e8e8", borderRadius: "14px", padding: "20px" }}>
+          <div style={{ fontSize: "10px", color: "#666666", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1.2px", marginBottom: "16px" }}>Team Workload</div>
+          <WorkloadBars />
+        </div>
+      </div>
+
+      {/* ── Row 3: Client progress + Team ── */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+
+        {/* Client completion */}
+        <div style={{ background: "#ffffff", border: "1px solid #e8e8e8", borderRadius: "14px", padding: "20px" }}>
+          <div style={{ fontSize: "10px", color: "#666666", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1.2px", marginBottom: "16px" }}>
+            {role === "manager" ? "Your Clients" : "Client Progress"}
+          </div>
+          {enrichedClients.length === 0 ? <Empty msg="No clients yet" /> : enrichedClients.map(p => {
+            const barColor = p.status === "critical" ? "#ff6b6b" : p.status === "at-risk" ? "#00C9CC" : p.status === "completed" ? "#4ade80" : bizColor;
+            const clientTasks = tasks.filter(t => t.client_id === p.id);
+            const done = clientTasks.filter(t => t.status === "done").length;
+            return (
+              <div key={p.id} style={{ marginBottom: "16px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "5px" }}>
+                  <div>
+                    <div style={{ fontSize: "12px", fontWeight: 600, color: "#111111" }}>{p.name}</div>
+                    <div style={{ fontSize: "10px", color: "#888888" }}>{done}/{clientTasks.length} tasks done</div>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                    <Badge status={p.status} />
+                    <span style={{ fontSize: "12px", color: barColor, fontWeight: 700 }}>{p.progress}%</span>
+                  </div>
+                </div>
+                <ProgressBar value={p.progress} color={barColor} />
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Team panel */}
         <div style={{ background: "#ffffff", border: "1px solid #e8e8e8", borderRadius: "14px", padding: "20px" }}>
           <div style={{ fontSize: "10px", color: "#666666", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1.2px", marginBottom: "16px" }}>Team</div>
           {employees.length === 0 ? <Empty msg="No team members yet" /> : employees.map(emp => {
@@ -258,31 +395,6 @@ function OverviewView({ bizFilter, bizColor, profile, clientMembers }) {
                     </div>
                   )}
                 </div>
-              </div>
-            );
-          })}
-        </div>
-        <div style={{ background: "#ffffff", border: "1px solid #e8e8e8", borderRadius: "14px", padding: "20px" }}>
-          <div style={{ fontSize: "10px", color: "#666666", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1.2px", marginBottom: "16px" }}>
-            {role === "manager" ? "Your Clients" : "All Clients"}
-          </div>
-          {enrichedClients.length === 0 ? <Empty msg="No clients yet" /> : enrichedClients.map(p => {
-            const barColor = p.status === "critical" ? "#ff6b6b" : p.status === "at-risk" ? "#00C9CC" : p.status === "completed" ? "#4ade80" : bizColor;
-            const clientTasks = tasks.filter(t => t.client_id === p.id);
-            const doneTasks = clientTasks.filter(t => t.status === "done").length;
-            return (
-              <div key={p.id} style={{ marginBottom: "16px" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "6px" }}>
-                  <div>
-                    <div style={{ fontSize: "12px", fontWeight: 600, color: "#111111" }}>{p.name}</div>
-                    <div style={{ fontSize: "10px", color: "#888888" }}>{doneTasks}/{clientTasks.length} tasks done</div>
-                  </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                    <Badge status={p.status} />
-                    <span style={{ fontSize: "12px", color: barColor, fontWeight: 700 }}>{p.progress}%</span>
-                  </div>
-                </div>
-                <ProgressBar value={p.progress} color={barColor} />
               </div>
             );
           })}
