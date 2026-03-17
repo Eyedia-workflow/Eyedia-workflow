@@ -160,16 +160,35 @@ function OverviewView({ bizFilter, bizColor, profile, clientMembers }) {
     async function load() {
       setLoading(true);
       let projQuery = supabase.from("clients").select("*").eq("business", bizFilter);
-      if (role === "manager") {
-        const { data: mp } = await supabase.from("client_members").select("client_id").eq("profile_id", profile.id).ilike("project_role", "%manager%");
+      let taskQuery = supabase.from("tasks").select("*").eq("business", bizFilter);
+
+      if (role === "employee") {
+        // Team members only see their assigned clients and own tasks
+        const { data: myMemberships } = await supabase.from("client_members").select("client_id").eq("profile_id", profile.id);
+        const myClientIds = (myMemberships || []).map(r => r.client_id);
+        if (myClientIds.length) {
+          projQuery = projQuery.in("id", myClientIds);
+        } else {
+          setClients([]); setTasks([]); setEmployees([]); setAllClientMembers([]); setLoading(false); return;
+        }
+        taskQuery = taskQuery.eq("assigned_to", profile.id);
+      } else if (role === "manager") {
+        // Managers only see clients they are assigned to
+        const { data: mp } = await supabase.from("client_members").select("client_id").eq("profile_id", profile.id);
         const ids = (mp || []).map(r => r.client_id);
-        if (ids.length) projQuery = projQuery.in("id", ids); else { setClients([]); setLoading(false); return; }
+        if (ids.length) {
+          projQuery = projQuery.in("id", ids);
+          taskQuery = taskQuery.in("client_id", ids);
+        } else {
+          setClients([]); setTasks([]); setEmployees([]); setAllClientMembers([]); setLoading(false); return;
+        }
       }
+
       const [{ data: emps }, { data: projs }, { data: cm }, { data: t }] = await Promise.all([
         supabase.from("profiles").select("*").eq("business", bizFilter),
         projQuery,
         supabase.from("client_members").select("*, clients(name)"),
-        supabase.from("tasks").select("*").eq("business", bizFilter),
+        taskQuery,
       ]);
       setEmployees(emps || []);
       setClients(projs || []);
@@ -476,7 +495,11 @@ function OverviewView({ bizFilter, bizColor, profile, clientMembers }) {
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: "12px", fontWeight: 600, color: "#111111" }}>{emp.full_name}</div>
                   <div style={{ fontSize: "10px", color: "#888888", marginBottom: "4px" }}>{emp.role}</div>
-                  {empAssignments.length > 0 && (
+                  {emp.is_owner ? (
+                    <span style={{ fontSize: "9px", fontWeight: 700, padding: "2px 7px", borderRadius: "8px", background: "#FFD60015", color: "#FFD600", border: "1px solid #FFD60025" }}>
+                      👑 CEO · All Clients
+                    </span>
+                  ) : empAssignments.length > 0 ? (
                     <div style={{ display: "flex", flexWrap: "wrap", gap: "4px" }}>
                       {empAssignments.map(a => {
                         const isManager = a.project_role?.toLowerCase().includes("manager");
@@ -492,7 +515,7 @@ function OverviewView({ bizFilter, bizColor, profile, clientMembers }) {
                         );
                       })}
                     </div>
-                  )}
+                  ) : null}
                 </div>
               </div>
             );
