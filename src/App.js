@@ -439,12 +439,15 @@ function TasksView({ bizFilter, profile, clientMembers, bizColor }) {
     if (!link) return;
     const { error } = await supabase.from("tasks").update({ delivery_link: link, status: "submitted" }).eq("id", id);
     if (error) { alert("❌ Could not save link: " + error.message); return; }
-    // Notify all managers on this task's client
+    // Notify all managers on this task's client + owner
     const task = tasks.find(t => t.id === id);
     if (task) {
       const { data: managers } = await supabase.from("client_members").select("profile_id").eq("client_id", task.client_id).ilike("project_role", "%manager%");
-      for (const m of (managers || [])) {
-        await supabase.from("notifications").insert({ profile_id: m.profile_id, message: `${profile?.full_name || "Someone"} submitted a delivery for "${task.title}" — ready to review 🔗`, type: "submitted", task_id: id });
+      const { data: owners } = await supabase.from("profiles").select("id").eq("is_owner", true);
+      const notifyIds = new Set([...(managers || []).map(m => m.profile_id), ...(owners || []).map(o => o.id)]);
+      notifyIds.delete(profile?.id); // don't notify yourself
+      for (const pid of notifyIds) {
+        await supabase.from("notifications").insert({ profile_id: pid, message: `${profile?.full_name || "Someone"} submitted a delivery for "${task.title}" — ready to review 🔗`, type: "submitted", task_id: id });
       }
     }
     load();
@@ -1309,7 +1312,7 @@ export default function EyediaApp() {
                   {notifications.length === 0 ? (
                     <div style={{ padding: "24px", textAlign: "center", fontSize: "12px", color: "#aaa" }}>No notifications yet</div>
                   ) : notifications.map(n => (
-                    <div key={n.id} onClick={() => markRead(n.id)} style={{ padding: "12px 16px", borderBottom: "1px solid #f8f8f8", background: n.read ? "transparent" : "#FFD60005", cursor: "pointer", transition: "background 0.15s" }}
+                    <div key={n.id} onClick={() => { markRead(n.id); if (n.task_id) { setActiveView("tasks"); setShowNotifs(false); } }} style={{ padding: "12px 16px", borderBottom: "1px solid #f8f8f8", background: n.read ? "transparent" : "#FFD60005", cursor: "pointer", transition: "background 0.15s" }}
                       onMouseEnter={e => e.currentTarget.style.background = "#f8f8f8"}
                       onMouseLeave={e => e.currentTarget.style.background = n.read ? "transparent" : "#FFD60005"}>
                       <div style={{ display: "flex", gap: "10px", alignItems: "flex-start" }}>
