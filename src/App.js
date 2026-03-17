@@ -498,7 +498,15 @@ function OverviewView({ bizFilter, bizColor, profile, clientMembers }) {
         {/* Team panel */}
         <div style={{ background: "#ffffff", border: "1px solid #e8e8e8", borderRadius: "14px", padding: "20px" }}>
           <div style={{ fontSize: "10px", color: "#666666", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1.2px", marginBottom: "16px" }}>Team</div>
-          {employees.length === 0 ? <Empty msg="No team members yet" /> : employees.map(emp => {
+          {employees.length === 0 ? <Empty msg="No team members yet" /> : [...employees].sort((a, b) => {
+            const rank = (e) => {
+              if (e.is_owner && e.title?.toLowerCase() === 'ceo') return 0;
+              if (e.is_owner) return 1; // director or other owner
+              if (allClientMembers.some(m => m.profile_id === e.id && m.project_role?.toLowerCase().includes('manager'))) return 2;
+              return 3;
+            };
+            return rank(a) - rank(b);
+          }).map(emp => {
             const empAssignments = allClientMembers.filter(m => m.profile_id === emp.id);
             return (
               <div key={emp.id} style={{ display: "flex", alignItems: "flex-start", gap: "10px", marginBottom: "14px" }}>
