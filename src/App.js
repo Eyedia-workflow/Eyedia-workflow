@@ -415,7 +415,10 @@ function TasksView({ bizFilter, profile, clientMembers, bizColor }) {
 
   async function addTask() {
     if (!form.title || !form.client_id) return;
-    await supabase.from("tasks").insert([{ ...form, business: bizFilter }]);
+    const { data: newTask } = await supabase.from("tasks").insert([{ ...form, business: bizFilter }]).select().single();
+    if (newTask && form.assigned_to) {
+      await supabase.from("notifications").insert({ profile_id: form.assigned_to, message: `You've been assigned a new task: "${form.title}"`, type: "assigned", task_id: newTask.id });
+    }
     setShowAdd(false);
     setForm({ title: "", description: "", assigned_to: "", client_id: "", deadline: "", status: "pending", priority: "normal" });
     load();
@@ -436,11 +439,23 @@ function TasksView({ bizFilter, profile, clientMembers, bizColor }) {
     if (!link) return;
     const { error } = await supabase.from("tasks").update({ delivery_link: link, status: "submitted" }).eq("id", id);
     if (error) { alert("❌ Could not save link: " + error.message); return; }
+    // Notify all managers on this task's client
+    const task = tasks.find(t => t.id === id);
+    if (task) {
+      const { data: managers } = await supabase.from("client_members").select("profile_id").eq("client_id", task.client_id).ilike("project_role", "%manager%");
+      for (const m of (managers || [])) {
+        await supabase.from("notifications").insert({ profile_id: m.profile_id, message: `${profile?.full_name || "Someone"} submitted a delivery for "${task.title}" — ready to review 🔗`, type: "submitted", task_id: id });
+      }
+    }
     load();
   }
 
   async function approveTask(id) {
     await supabase.from("tasks").update({ status: "done" }).eq("id", id);
+    const task = tasks.find(t => t.id === id);
+    if (task?.assigned_to) {
+      await supabase.from("notifications").insert({ profile_id: task.assigned_to, message: `Your task "${task.title}" was approved! ✅`, type: "approved", task_id: id });
+    }
     load();
   }
 
@@ -448,6 +463,10 @@ function TasksView({ bizFilter, profile, clientMembers, bizColor }) {
     const reason = window.prompt("Reason for rejection (optional):");
     const { error } = await supabase.from("tasks").update({ status: "rejected", delivery_link: null, rejection_note: reason || "Rejected by manager" }).eq("id", id);
     if (error) { alert("❌ " + error.message); return; }
+    const task = tasks.find(t => t.id === id);
+    if (task?.assigned_to) {
+      await supabase.from("notifications").insert({ profile_id: task.assigned_to, message: `Your task "${task.title}" was rejected. Reason: ${reason || "Please resubmit"}`, type: "rejected", task_id: id });
+    }
     load();
   }
 
@@ -1147,6 +1166,8 @@ export default function EyediaApp() {
   const [authChecked, setAuthChecked] = useState(false);
   const [alertCount, setAlertCount] = useState(0);
   const [clientMembers, setClientMembers] = useState([]);
+  const [notifications, setNotifications] = useState([]);
+  const [showNotifs, setShowNotifs] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -1171,6 +1192,23 @@ export default function EyediaApp() {
     if (data) { setProfile(data); if (data.business && data.business !== "both") setActiveBiz(data.business); }
     const { data: members } = await supabase.from("client_members").select("*");
     if (members) setClientMembers(members);
+    loadNotifications(uid);
+  }
+
+  async function loadNotifications(uid) {
+    const { data } = await supabase.from("notifications").select("*").eq("profile_id", uid).order("created_at", { ascending: false }).limit(20);
+    setNotifications(data || []);
+  }
+
+  async function markAllRead() {
+    if (!profile) return;
+    await supabase.from("notifications").update({ read: true }).eq("profile_id", profile.id).eq("read", false);
+    loadNotifications(profile.id);
+  }
+
+  async function markRead(id) {
+    await supabase.from("notifications").update({ read: true }).eq("id", id);
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
   }
 
   const bizColor = activeBiz === "digital" ? "#FFD600" : "#00C9CC";
@@ -1249,6 +1287,48 @@ export default function EyediaApp() {
             <div style={{ width: "6px", height: "6px", background: "#4ade80", borderRadius: "50%", animation: "pulse 2s infinite" }} />
             <span style={{ fontSize: "10px", color: "#666666" }}>Live</span>
           </div>
+
+          {/* Bell icon */}
+          <div style={{ position: "relative" }}>
+            <button onClick={() => { setShowNotifs(!showNotifs); if (!showNotifs) markAllRead(); }}
+              style={{ position: "relative", padding: "4px 8px", background: "#ffffff", border: "1px solid #eeeeee", borderRadius: "8px", cursor: "pointer", fontSize: "14px" }}>
+              🔔
+              {notifications.filter(n => !n.read).length > 0 && (
+                <span style={{ position: "absolute", top: "-4px", right: "-4px", background: "#ff6b6b", color: "white", fontSize: "8px", fontWeight: 800, padding: "1px 4px", borderRadius: "8px", minWidth: "14px", textAlign: "center" }}>
+                  {notifications.filter(n => !n.read).length}
+                </span>
+              )}
+            </button>
+            {showNotifs && (
+              <div style={{ position: "absolute", right: 0, top: "36px", width: "300px", background: "#ffffff", border: "1px solid #e8e8e8", borderRadius: "14px", boxShadow: "0 8px 32px rgba(0,0,0,0.12)", zIndex: 999, overflow: "hidden" }}>
+                <div style={{ padding: "12px 16px", borderBottom: "1px solid #f0f0f0", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span style={{ fontSize: "12px", fontWeight: 700, color: "#111" }}>Notifications</span>
+                  <button onClick={() => setShowNotifs(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "#888", fontSize: "14px" }}>×</button>
+                </div>
+                <div style={{ maxHeight: "360px", overflowY: "auto" }}>
+                  {notifications.length === 0 ? (
+                    <div style={{ padding: "24px", textAlign: "center", fontSize: "12px", color: "#aaa" }}>No notifications yet</div>
+                  ) : notifications.map(n => (
+                    <div key={n.id} onClick={() => markRead(n.id)} style={{ padding: "12px 16px", borderBottom: "1px solid #f8f8f8", background: n.read ? "transparent" : "#FFD60005", cursor: "pointer", transition: "background 0.15s" }}
+                      onMouseEnter={e => e.currentTarget.style.background = "#f8f8f8"}
+                      onMouseLeave={e => e.currentTarget.style.background = n.read ? "transparent" : "#FFD60005"}>
+                      <div style={{ display: "flex", gap: "10px", alignItems: "flex-start" }}>
+                        <span style={{ fontSize: "16px", flexShrink: 0 }}>
+                          {n.type === "assigned" ? "📋" : n.type === "approved" ? "✅" : n.type === "rejected" ? "❌" : n.type === "submitted" ? "🔗" : "🔔"}
+                        </span>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: "12px", color: "#111", lineHeight: 1.4 }}>{n.message}</div>
+                          <div style={{ fontSize: "10px", color: "#aaa", marginTop: "3px" }}>{new Date(n.created_at).toLocaleDateString()}</div>
+                        </div>
+                        {!n.read && <div style={{ width: "7px", height: "7px", borderRadius: "50%", background: bizColor, flexShrink: 0, marginTop: "4px" }} />}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
           <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "11px", color: "#666666", background: "#ffffff", padding: "4px 10px", borderRadius: "8px", border: "1px solid #eeeeee" }}>
             {profile?.full_name || user.email}
             {profile && <RolePill profile={profile} clientMembers={clientMembers} />}
