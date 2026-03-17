@@ -519,7 +519,7 @@ function TasksView({ bizFilter, profile, clientMembers, bizColor }) {
       )}
 
       {/* Kanban Board */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px", alignItems: "start" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(240px, 1fr))", gap: "12px", alignItems: "start", overflowX: "auto", paddingBottom: "12px", WebkitOverflowScrolling: "touch" }}>
         {COLUMNS.map(col => {
           const colTasks = getColumnTasks(col.id);
           const isDragTarget = dragOver === col.id && ["pending", "in-progress"].includes(col.id);
