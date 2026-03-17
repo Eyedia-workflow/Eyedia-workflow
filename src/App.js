@@ -394,25 +394,6 @@ function OverviewView({ bizFilter, bizColor, profile, clientMembers }) {
         ))}
       </div>
 
-      {/* ── Row 1: Stats ── */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px" }}>
-        {[
-          { label: "Team Members", value: employees.length, sub: `in ${bizFilter}`, color: bizColor, icon: "◈" },
-          { label: "Active Clients", value: enrichedClients.filter(p => p.status !== "completed").length, sub: `${enrichedClients.filter(p => p.status === "completed").length} completed`, color: "#4ade80", icon: "◻" },
-          { label: "Overdue Tasks", value: overdueTasks, sub: "need immediate action", color: "#ff6b6b", icon: "⚠" },
-          { label: "Done This Cycle", value: doneTasks, sub: `of ${totalTasks} total tasks`, color: bizColor, icon: "✦" },
-        ].map((s, i) => (
-          <div key={i} style={{ background: "#ffffff", border: "1px solid #e8e8e8", borderRadius: "14px", padding: "18px 20px" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "10px" }}>
-              <span style={{ fontSize: "10px", color: "#666666", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1.2px" }}>{s.label}</span>
-              <span>{s.icon}</span>
-            </div>
-            <div style={{ fontSize: "30px", fontWeight: 800, color: s.color, fontFamily: "'Bebas Neue', sans-serif", letterSpacing: "1px" }}>{s.value}</div>
-            <div style={{ fontSize: "11px", color: "#888888", marginTop: "4px" }}>{s.sub}</div>
-          </div>
-        ))}
-      </div>
-
       {/* ── Row 2: Donut + Workload ── */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
 
