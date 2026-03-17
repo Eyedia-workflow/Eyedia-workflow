@@ -273,8 +273,126 @@ function OverviewView({ bizFilter, bizColor, profile, clientMembers }) {
 
   if (loading) return <Spinner />;
 
+  // ── TEAM MEMBER VIEW ──
+  if (role === "employee") {
+    const myTasks = tasks.filter(t => t.assigned_to === profile.id);
+    const myDone = myTasks.filter(t => t.status === "done").length;
+    const myOverdue = myTasks.filter(t => t.status !== "done" && t.deadline && new Date(t.deadline) < new Date()).length;
+    const myPending = myTasks.filter(t => t.status === "pending").length;
+    const myInProgress = myTasks.filter(t => t.status === "in-progress").length;
+    return (
+      <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px" }}>
+          {[
+            { label: "My Tasks", value: myTasks.length, sub: "total assigned", color: bizColor, icon: "◈" },
+            { label: "Done", value: myDone, sub: "completed", color: "#4ade80", icon: "✅" },
+            { label: "In Progress", value: myInProgress, sub: "active", color: "#FFD600", icon: "⚡" },
+            { label: "Overdue", value: myOverdue, sub: "need attention", color: "#ff6b6b", icon: "⚠" },
+          ].map((s, i) => (
+            <div key={i} style={{ background: "#ffffff", border: "1px solid #e8e8e8", borderRadius: "14px", padding: "18px 20px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "10px" }}>
+                <span style={{ fontSize: "10px", color: "#666666", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1.2px" }}>{s.label}</span>
+                <span>{s.icon}</span>
+              </div>
+              <div style={{ fontSize: "30px", fontWeight: 800, color: s.color, fontFamily: "'Bebas Neue', sans-serif", letterSpacing: "1px" }}>{s.value}</div>
+              <div style={{ fontSize: "11px", color: "#888888", marginTop: "4px" }}>{s.sub}</div>
+            </div>
+          ))}
+        </div>
+        <div style={{ background: "#ffffff", border: "1px solid #e8e8e8", borderRadius: "14px", padding: "20px" }}>
+          <div style={{ fontSize: "10px", color: "#666666", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1.2px", marginBottom: "16px" }}>My Tasks</div>
+          {myTasks.length === 0 ? <Empty msg="No tasks assigned to you yet" /> : myTasks.map(t => {
+            const isOverdue = t.status !== "done" && t.deadline && new Date(t.deadline) < new Date();
+            return (
+              <div key={t.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: "1px solid #f5f5f5" }}>
+                <div>
+                  <div style={{ fontSize: "12px", fontWeight: 600, color: "#111" }}>{t.title}</div>
+                  <div style={{ fontSize: "10px", color: "#888", marginTop: "2px" }}>📁 {t.clients?.name || "—"} · 📅 {t.deadline || "—"}</div>
+                </div>
+                <Badge status={isOverdue ? "overdue" : t.status} />
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  // ── MANAGER VIEW ──
+  if (role === "manager") {
+    return (
+      <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px" }}>
+          {[
+            { label: "My Clients", value: enrichedClients.length, sub: `${enrichedClients.filter(p => p.status === "completed").length} completed`, color: bizColor, icon: "◻" },
+            { label: "Total Tasks", value: totalTasks, sub: `${doneTasks} done`, color: "#4ade80", icon: "◈" },
+            { label: "Overdue", value: overdueTasks, sub: "need attention", color: "#ff6b6b", icon: "⚠" },
+            { label: "Pending Approval", value: submittedTasks, sub: "awaiting review", color: "#a855f7", icon: "🔗" },
+          ].map((s, i) => (
+            <div key={i} style={{ background: "#ffffff", border: "1px solid #e8e8e8", borderRadius: "14px", padding: "18px 20px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "10px" }}>
+                <span style={{ fontSize: "10px", color: "#666666", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1.2px" }}>{s.label}</span>
+                <span>{s.icon}</span>
+              </div>
+              <div style={{ fontSize: "30px", fontWeight: 800, color: s.color, fontFamily: "'Bebas Neue', sans-serif", letterSpacing: "1px" }}>{s.value}</div>
+              <div style={{ fontSize: "11px", color: "#888888", marginTop: "4px" }}>{s.sub}</div>
+            </div>
+          ))}
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+          <div style={{ background: "#ffffff", border: "1px solid #e8e8e8", borderRadius: "14px", padding: "20px" }}>
+            <div style={{ fontSize: "10px", color: "#666666", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1.2px", marginBottom: "16px" }}>Your Clients</div>
+            {enrichedClients.length === 0 ? <Empty msg="No clients assigned" /> : enrichedClients.map(p => {
+              const barColor = p.status === "critical" ? "#ff6b6b" : p.status === "at-risk" ? "#00C9CC" : p.status === "completed" ? "#4ade80" : bizColor;
+              const ct = tasks.filter(t => t.client_id === p.id);
+              return (
+                <div key={p.id} style={{ marginBottom: "16px" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "5px" }}>
+                    <div>
+                      <div style={{ fontSize: "12px", fontWeight: 600, color: "#111" }}>{p.name}</div>
+                      <div style={{ fontSize: "10px", color: "#888" }}>{ct.filter(t => t.status === "done").length}/{ct.length} tasks done</div>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                      <Badge status={p.status} />
+                      <span style={{ fontSize: "12px", color: barColor, fontWeight: 700 }}>{p.progress}%</span>
+                    </div>
+                  </div>
+                  <ProgressBar value={p.progress} color={barColor} />
+                </div>
+              );
+            })}
+          </div>
+          <div style={{ background: "#ffffff", border: "1px solid #e8e8e8", borderRadius: "14px", padding: "20px" }}>
+            <div style={{ fontSize: "10px", color: "#666666", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1.2px", marginBottom: "16px" }}>Team Workload</div>
+            <WorkloadBars />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── OWNER VIEW (full dashboard) ──
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+
+      {/* ── Row 1: Stats ── */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px" }}>
+        {[
+          { label: "Team Members", value: employees.length, sub: `in ${bizFilter}`, color: bizColor, icon: "◈" },
+          { label: "Active Clients", value: enrichedClients.filter(p => p.status !== "completed").length, sub: `${enrichedClients.filter(p => p.status === "completed").length} completed`, color: "#4ade80", icon: "◻" },
+          { label: "Overdue Tasks", value: overdueTasks, sub: "need immediate action", color: "#ff6b6b", icon: "⚠" },
+          { label: "Done This Cycle", value: doneTasks, sub: `of ${totalTasks} total tasks`, color: bizColor, icon: "✦" },
+        ].map((s, i) => (
+          <div key={i} style={{ background: "#ffffff", border: "1px solid #e8e8e8", borderRadius: "14px", padding: "18px 20px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "10px" }}>
+              <span style={{ fontSize: "10px", color: "#666666", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1.2px" }}>{s.label}</span>
+              <span>{s.icon}</span>
+            </div>
+            <div style={{ fontSize: "30px", fontWeight: 800, color: s.color, fontFamily: "'Bebas Neue', sans-serif", letterSpacing: "1px" }}>{s.value}</div>
+            <div style={{ fontSize: "11px", color: "#888888", marginTop: "4px" }}>{s.sub}</div>
+          </div>
+        ))}
+      </div>
 
       {/* ── Row 1: Stats ── */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px" }}>
