@@ -1136,7 +1136,7 @@ function FollowUpsView({ bizFilter }) {
 
 
 // ─── Admin View (Owner only) ──────────────────────────────
-function AdminView({ bizFilter, bizColor }) {
+function AdminView({ bizFilter, bizColor, profile }) {
   const [tab, setTab] = useState("clients");
   const [clients, setClients] = useState([]);
   const [team, setTeam] = useState([]);
@@ -1360,7 +1360,7 @@ function AdminView({ bizFilter, bizColor }) {
                 <div style={{ fontSize: "11px", color: "#999999", marginTop: "2px" }}>{clientMembers.filter(m => m.profile_id === p.id).map(m => m.clients?.name).join(", ") || "No clients assigned"}</div>
               </div>
               {!p.is_owner && <button style={dangerBtn} onClick={() => deleteEmployee(p.id)}>🗑️ Remove</button>}
-              {p.is_owner && profile?.title && <span style={{ fontSize: "10px", color: "#aaa" }}>Protected</span>}
+              {p.is_owner && p.id !== profile?.id && <span style={{ fontSize: "10px", color: "#aaa" }}>Protected</span>}
             </div>
           ))}
         </div>
@@ -1643,7 +1643,7 @@ export default function EyediaApp() {
             {activeView === "clients" && <ClientsView bizFilter={activeBiz} bizColor={bizColor} profile={profile} clientMembers={clientMembers} />}
             {activeView === "deliverables" && <DeliverablesView bizFilter={activeBiz} profile={profile} clientMembers={clientMembers} />}
             {activeView === "followups" && <FollowUpsView bizFilter={activeBiz} />}
-            {activeView === "admin" && <AdminView bizFilter={activeBiz} bizColor={bizColor} />}
+            {activeView === "admin" && <AdminView bizFilter={activeBiz} bizColor={bizColor} profile={profile} />}
           </div>
         </div>
       </div>
