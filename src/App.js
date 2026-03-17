@@ -362,14 +362,15 @@ function TaskComments({ taskId, profile }) {
   );
 }
 
-// ─── Tasks View ───────────────────────────────────────────
-function TasksView({ bizFilter, profile, clientMembers }) {
+// ─── Tasks View (Kanban) ─────────────────────────────────
+function TasksView({ bizFilter, profile, clientMembers, bizColor }) {
   const [tasks, setTasks] = useState([]);
   const [clients, setClients] = useState([]);
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
   const [linkInputs, setLinkInputs] = useState({});
+  const [dragOver, setDragOver] = useState(null);
   const [form, setForm] = useState({ title: "", description: "", assigned_to: "", client_id: "", deadline: "", status: "pending", priority: "normal" });
   const role = getRole(profile, clientMembers);
   const canAdd = role === "owner" || role === "manager";
@@ -387,13 +388,10 @@ function TasksView({ bizFilter, profile, clientMembers }) {
       if (projIds && projIds.length) taskQuery = taskQuery.in("client_id", projIds);
       else { setTasks([]); setClients([]); setEmployees([]); setLoading(false); return; }
     }
-
     let projQuery = supabase.from("clients").select("id, name").eq("business", bizFilter);
     if (role === "manager" && projIds && projIds.length) projQuery = projQuery.in("id", projIds);
-
     const [{ data: t }, { data: p }, { data: e }] = await Promise.all([
-      taskQuery,
-      projQuery,
+      taskQuery, projQuery,
       supabase.from("profiles").select("id, full_name, is_owner").eq("business", bizFilter),
     ]);
     setTasks(t || []);
@@ -405,11 +403,10 @@ function TasksView({ bizFilter, profile, clientMembers }) {
   useEffect(() => { load(); }, [bizFilter]);
 
   function autoStatus(task) {
-    if (task.status === "done" || task.status === "submitted") return task.status;
+    if (task.status === "done" || task.status === "submitted" || task.status === "rejected") return task.status;
     if (!task.deadline) return task.status;
     const today = new Date();
-    const deadline = new Date(task.deadline);
-    const daysLeft = Math.ceil((deadline - today) / (1000 * 60 * 60 * 24));
+    const daysLeft = Math.ceil((new Date(task.deadline) - today) / (1000 * 60 * 60 * 24));
     if (daysLeft < 0) return "overdue";
     if (daysLeft <= 3) return "critical";
     if (daysLeft <= 7) return "at-risk";
@@ -420,7 +417,7 @@ function TasksView({ bizFilter, profile, clientMembers }) {
     if (!form.title || !form.client_id) return;
     await supabase.from("tasks").insert([{ ...form, business: bizFilter }]);
     setShowAdd(false);
-    setForm({ title: "", description: "", assigned_to: "", client_id: "", deadline: "", status: "pending" });
+    setForm({ title: "", description: "", assigned_to: "", client_id: "", deadline: "", status: "pending", priority: "normal" });
     load();
   }
 
@@ -438,10 +435,7 @@ function TasksView({ bizFilter, profile, clientMembers }) {
   async function submitLink(id, link) {
     if (!link) return;
     const { error } = await supabase.from("tasks").update({ delivery_link: link, status: "submitted" }).eq("id", id);
-    if (error) {
-      alert("\u274c Could not save link: " + error.message);
-      return;
-    }
+    if (error) { alert("❌ Could not save link: " + error.message); return; }
     load();
   }
 
@@ -457,15 +451,45 @@ function TasksView({ bizFilter, profile, clientMembers }) {
     load();
   }
 
+  function onDragStart(e, taskId) {
+    e.dataTransfer.setData("taskId", taskId);
+  }
+
+  async function onDrop(e, newStatus) {
+    e.preventDefault();
+    const taskId = e.dataTransfer.getData("taskId");
+    if (!taskId) return;
+    const task = tasks.find(t => String(t.id) === String(taskId));
+    if (!task) return;
+    // Only allow dragging to pending/in-progress — not submitted/done/rejected
+    if (!["pending", "in-progress"].includes(newStatus)) return;
+    if (!canAdd && task.assigned_to !== profile.id) return;
+    await updateStatus(parseInt(taskId), newStatus);
+    setDragOver(null);
+  }
+
+  const COLUMNS = [
+    { id: "pending",     label: "Pending",     color: "#888888", dot: "#888" },
+    { id: "in-progress", label: "In Progress",  color: "#FFD600", dot: "#FFD600" },
+    { id: "submitted",   label: "Pending Approval", color: "#a855f7", dot: "#a855f7" },
+    { id: "done",        label: "Done",         color: "#4ade80", dot: "#4ade80" },
+  ];
+
+  function getColumnTasks(colId) {
+    return tasks.filter(t => {
+      if (colId === "submitted") return t.status === "submitted" || t.status === "rejected";
+      if (colId === "in-progress") return t.status === "in-progress" || t.status === "overdue" || t.status === "critical" || t.status === "at-risk";
+      return t.status === colId;
+    });
+  }
+
   if (loading) return <Spinner />;
 
   return (
     <div>
       {canAdd && (
         <div style={{ marginBottom: "16px", display: "flex", justifyContent: "flex-end" }}>
-          <button onClick={() => setShowAdd(!showAdd)} style={{ padding: "8px 18px", background: "#FFD60015", border: "1px solid #FFD60030", borderRadius: "10px", color: "#FFD600", fontSize: "12px", fontWeight: 600, cursor: "pointer" }}>
-            + Add Task
-          </button>
+          <button onClick={() => setShowAdd(!showAdd)} style={{ padding: "8px 18px", background: "#FFD60015", border: "1px solid #FFD60030", borderRadius: "10px", color: "#FFD600", fontSize: "12px", fontWeight: 600, cursor: "pointer" }}>+ Add Task</button>
         </div>
       )}
 
@@ -482,7 +506,7 @@ function TasksView({ bizFilter, profile, clientMembers }) {
             <Select label="Client" value={form.client_id} onChange={v => setForm({ ...form, client_id: v })}
               options={[{ value: "", label: "Select client" }, ...clients.map(p => ({ value: p.id, label: p.name }))]} />
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "10px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "14px" }}>
             <Input label="Description (optional)" value={form.description} onChange={v => setForm({ ...form, description: v })} placeholder="Brief description..." />
             <Select label="Priority" value={form.priority} onChange={v => setForm({ ...form, priority: v })}
               options={[{ value: "urgent", label: "🔴 Urgent" }, { value: "high", label: "🟠 High" }, { value: "normal", label: "🔵 Normal" }, { value: "low", label: "⚪ Low" }]} />
@@ -494,98 +518,94 @@ function TasksView({ bizFilter, profile, clientMembers }) {
         </div>
       )}
 
-      {tasks.length === 0 ? (
-        <Empty msg={canAdd ? "No tasks yet. Add your first task above!" : "No tasks assigned to you yet."} />
-      ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-          {tasks.map((task) => (
-            <div key={task.id} style={{ background: "#ffffff", border: "1px solid #eeeeee", borderRadius: "14px", padding: "16px", boxShadow: "0 1px 8px rgba(0,0,0,0.05)" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "10px", gap: "8px" }}>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: "14px", fontWeight: 700, color: "#111111" }}>{task.title}</div>
-                  {task.description && <div style={{ fontSize: "11px", color: "#888888", marginTop: "3px" }}>{task.description}</div>}
+      {/* Kanban Board */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px", alignItems: "start" }}>
+        {COLUMNS.map(col => {
+          const colTasks = getColumnTasks(col.id);
+          const isDragTarget = dragOver === col.id && ["pending", "in-progress"].includes(col.id);
+          return (
+            <div key={col.id}
+              onDragOver={e => { e.preventDefault(); setDragOver(col.id); }}
+              onDragLeave={() => setDragOver(null)}
+              onDrop={e => onDrop(e, col.id)}
+              style={{ background: isDragTarget ? `${col.color}08` : "#f8f8f8", borderRadius: "14px", padding: "12px", border: `1px solid ${isDragTarget ? col.color + "40" : "#eeeeee"}`, minHeight: "200px", transition: "all 0.15s" }}>
+              {/* Column Header */}
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "12px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                  <div style={{ width: "7px", height: "7px", borderRadius: "50%", background: col.color }} />
+                  <span style={{ fontSize: "11px", fontWeight: 700, color: "#444", textTransform: "uppercase", letterSpacing: "0.8px" }}>{col.label}</span>
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
-                  <Badge status={autoStatus(task)} />
-                  {canAdd && (
-                    <button onClick={() => deleteTask(task.id)} style={{ padding: "4px 8px", background: "transparent", border: "1px solid #ff444430", borderRadius: "6px", color: "#ff6b6b", fontSize: "11px", cursor: "pointer" }}>🗑️</button>
-                  )}
-                </div>
+                <span style={{ fontSize: "10px", fontWeight: 700, color: col.color, background: `${col.color}15`, padding: "2px 7px", borderRadius: "8px" }}>{colTasks.length}</span>
               </div>
 
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "12px", marginBottom: "12px", alignItems: "center" }}>
-                <div style={{ fontSize: "11px", color: "#666666" }}>👤 {task.profiles?.full_name || "—"}</div>
-                <div style={{ fontSize: "11px", color: "#666666" }}>📁 {task.clients?.name || "—"}</div>
-                <div style={{ fontSize: "11px", color: "#666666" }}>📅 {task.deadline || "—"}</div>
-                {task.priority && task.priority !== "normal" && (() => {
-                  const p = { urgent: { color: "#ff4444", bg: "#ff444415", label: "🔴 Urgent" }, high: { color: "#ff8c00", bg: "#ff8c0015", label: "🟠 High" }, low: { color: "#888888", bg: "#88888815", label: "⚪ Low" } }[task.priority];
-                  return p ? <span style={{ fontSize: "10px", fontWeight: 700, color: p.color, background: p.bg, padding: "2px 8px", borderRadius: "8px", border: `1px solid ${p.color}25` }}>{p.label}</span> : null;
-                })()}
-              </div>
+              {/* Task Cards */}
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                {colTasks.length === 0 && (
+                  <div style={{ textAlign: "center", padding: "20px 0", fontSize: "11px", color: "#cccccc" }}>No tasks</div>
+                )}
+                {colTasks.map(task => {
+                  const priorityColors = { urgent: "#ff4444", high: "#ff8c00", low: "#888888" };
+                  const pColor = priorityColors[task.priority];
+                  return (
+                    <div key={task.id}
+                      draggable={canAdd || task.assigned_to === profile.id}
+                      onDragStart={e => onDragStart(e, task.id)}
+                      style={{ background: "#ffffff", border: "1px solid #eeeeee", borderRadius: "10px", padding: "12px", cursor: "grab", boxShadow: "0 1px 4px rgba(0,0,0,0.04)", borderLeft: pColor ? `3px solid ${pColor}` : "1px solid #eeeeee" }}>
 
-              {canAdd && !["submitted", "rejected", "done"].includes(task.status) && (
-                <div style={{ marginBottom: "12px" }}>
-                  <select value={task.status} onChange={e => updateStatus(task.id, e.target.value)}
-                    style={{ background: "#f8f8f8", border: "1px solid #e8e8e8", borderRadius: "8px", padding: "6px 12px", color: "#444444", fontSize: "11px", cursor: "pointer", outline: "none", width: "100%" }}>
-                    {["pending", "in-progress", "overdue"].map(s => <option key={s} value={s}>{s}</option>)}
-                  </select>
-                </div>
-              )}
-
-              <div>
-                {/* If a delivery link exists — always show it regardless of status */}
-                {task.delivery_link ? (
-                  <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                    <a href={task.delivery_link} target="_blank" rel="noreferrer"
-                      style={{ fontSize: "12px", color: task.status === "done" ? "#4ade80" : "#a855f7", fontWeight: 600, textDecoration: "none" }}>
-                      {task.status === "done" ? "🔗 View Delivery" : "🔗 Review Delivery"}
-                    </a>
-                    {/* Approve/Reject — show to owner/manager if not yet done */}
-                    {canAdd && task.status !== "done" && (
-                      <div style={{ display: "flex", gap: "8px" }}>
-                        <button onClick={() => approveTask(task.id)} style={{ flex: 1, padding: "8px", background: "#4ade8015", border: "1px solid #4ade8030", borderRadius: "8px", color: "#4ade80", fontSize: "12px", fontWeight: 600, cursor: "pointer" }}>✅ Approve</button>
-                        <button onClick={() => rejectTask(task.id)} style={{ flex: 1, padding: "8px", background: "#ff444415", border: "1px solid #ff444430", borderRadius: "8px", color: "#ff6b6b", fontSize: "12px", fontWeight: 600, cursor: "pointer" }}>❌ Reject</button>
+                      {/* Task title + delete */}
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "8px" }}>
+                        <div style={{ fontSize: "12px", fontWeight: 700, color: "#111", flex: 1, marginRight: "6px", lineHeight: 1.3 }}>{task.title}</div>
+                        {canAdd && <button onClick={() => deleteTask(task.id)} style={{ padding: "2px 5px", background: "transparent", border: "none", color: "#cccccc", fontSize: "11px", cursor: "pointer", flexShrink: 0 }}>🗑️</button>}
                       </div>
-                    )}
-                    {/* Assignee can resubmit if rejected */}
-                    {task.status === "rejected" && task.assigned_to === profile.id && (
-                      <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                        <div style={{ fontSize: "11px", color: "#ff6b6b" }}>❌ {task.rejection_note || "Rejected — please resubmit"}</div>
-                        <div style={{ display: "flex", gap: "8px" }}>
-                          <input value={linkInputs[task.id] || ""} onChange={e => setLinkInputs(p => ({ ...p, [task.id]: e.target.value }))}
-                            placeholder="New link..." style={{ flex: 1, background: "#f8f8f8", border: "1px solid #ff444430", borderRadius: "8px", padding: "8px 12px", color: "#111111", fontSize: "12px", outline: "none" }} />
-                          <button onClick={() => { submitLink(task.id, linkInputs[task.id]); setLinkInputs(p => ({ ...p, [task.id]: "" })); }}
-                            style={{ padding: "8px 14px", background: "#FFD60015", border: "1px solid #FFD60030", borderRadius: "8px", color: "#FFD600", fontSize: "12px", fontWeight: 600, cursor: "pointer" }}>↩ Resubmit</button>
+
+                      {/* Meta */}
+                      <div style={{ display: "flex", flexDirection: "column", gap: "3px", marginBottom: "8px" }}>
+                        <div style={{ fontSize: "10px", color: "#888" }}>👤 {task.profiles?.full_name || "—"}</div>
+                        <div style={{ fontSize: "10px", color: "#888" }}>📁 {task.clients?.name || "—"}</div>
+                        {task.deadline && <div style={{ fontSize: "10px", color: "#888" }}>📅 {task.deadline}</div>}
+                      </div>
+
+                      {/* Status badge */}
+                      <div style={{ marginBottom: "8px" }}>
+                        <Badge status={autoStatus(task)} />
+                      </div>
+
+                      {/* Delivery link / submit / approve / reject */}
+                      {task.delivery_link ? (
+                        <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                          <a href={task.delivery_link} target="_blank" rel="noreferrer" style={{ fontSize: "11px", color: task.status === "done" ? "#4ade80" : "#a855f7", fontWeight: 600, textDecoration: "none" }}>
+                            {task.status === "done" ? "🔗 View" : "🔗 Review"}
+                          </a>
+                          {canAdd && task.status !== "done" && (
+                            <div style={{ display: "flex", gap: "4px" }}>
+                              <button onClick={() => approveTask(task.id)} style={{ flex: 1, padding: "5px", background: "#4ade8015", border: "1px solid #4ade8030", borderRadius: "6px", color: "#4ade80", fontSize: "10px", fontWeight: 600, cursor: "pointer" }}>✅</button>
+                              <button onClick={() => rejectTask(task.id)} style={{ flex: 1, padding: "5px", background: "#ff444415", border: "1px solid #ff444430", borderRadius: "6px", color: "#ff6b6b", fontSize: "10px", fontWeight: 600, cursor: "pointer" }}>❌</button>
+                            </div>
+                          )}
                         </div>
-                      </div>
-                    )}
-                  </div>
-                ) : task.status === "rejected" ? (
-                  <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                    <div style={{ fontSize: "11px", color: "#ff6b6b", fontWeight: 600 }}>❌ Rejected: {task.rejection_note || "Please resubmit"}</div>
-                    {task.assigned_to === profile.id && (
-                      <div style={{ display: "flex", gap: "8px" }}>
-                        <input value={linkInputs[task.id] || ""} onChange={e => setLinkInputs(p => ({ ...p, [task.id]: e.target.value }))}
-                          placeholder="New link..." style={{ flex: 1, background: "#f8f8f8", border: "1px solid #ff444430", borderRadius: "8px", padding: "8px 12px", color: "#111111", fontSize: "12px", outline: "none" }} />
-                        <button onClick={() => { submitLink(task.id, linkInputs[task.id]); setLinkInputs(p => ({ ...p, [task.id]: "" })); }}
-                          style={{ padding: "8px 14px", background: "#FFD60015", border: "1px solid #FFD60030", borderRadius: "8px", color: "#FFD600", fontSize: "12px", fontWeight: 600, cursor: "pointer" }}>↩ Resubmit</button>
-                      </div>
-                    )}
-                  </div>
-                ) : task.assigned_to === profile.id ? (
-                  <div style={{ display: "flex", gap: "8px" }}>
-                    <input value={linkInputs[task.id] || ""} onChange={e => setLinkInputs(p => ({ ...p, [task.id]: e.target.value }))}
-                      placeholder="Drop delivery link here..." style={{ flex: 1, background: "#f8f8f8", border: "1px solid #e8e8e8", borderRadius: "8px", padding: "8px 12px", color: "#111111", fontSize: "12px", outline: "none" }} />
-                    <button onClick={() => { submitLink(task.id, linkInputs[task.id]); setLinkInputs(p => ({ ...p, [task.id]: "" })); }}
-                      style={{ padding: "8px 14px", background: "#4ade8015", border: "1px solid #4ade8030", borderRadius: "8px", color: "#4ade80", fontSize: "12px", fontWeight: 600, cursor: "pointer" }}>✓ Submit</button>
-                  </div>
-                ) : null}
+                      ) : task.status === "rejected" ? (
+                        <div style={{ fontSize: "10px", color: "#ff6b6b", marginBottom: "4px" }}>❌ {task.rejection_note || "Rejected"}</div>
+                      ) : null}
+
+                      {/* Submit link for assignee */}
+                      {!task.delivery_link && task.assigned_to === profile.id && task.status !== "done" && (
+                        <div style={{ display: "flex", gap: "4px", marginTop: "6px" }}>
+                          <input value={linkInputs[task.id] || ""} onChange={e => setLinkInputs(p => ({ ...p, [task.id]: e.target.value }))}
+                            placeholder="Drop link..." style={{ flex: 1, background: "#f8f8f8", border: "1px solid #e8e8e8", borderRadius: "6px", padding: "5px 8px", fontSize: "10px", color: "#111", outline: "none" }} />
+                          <button onClick={() => { submitLink(task.id, linkInputs[task.id]); setLinkInputs(p => ({ ...p, [task.id]: "" })); }}
+                            style={{ padding: "5px 8px", background: "#4ade8015", border: "1px solid #4ade8030", borderRadius: "6px", color: "#4ade80", fontSize: "10px", fontWeight: 600, cursor: "pointer" }}>✓</button>
+                        </div>
+                      )}
+
+                      <TaskComments taskId={task.id} profile={profile} />
+                    </div>
+                  );
+                })}
               </div>
-              <TaskComments taskId={task.id} profile={profile} />
             </div>
-          ))}
-        </div>
-      )}
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -1286,7 +1306,7 @@ export default function EyediaApp() {
               </div>
             </div>
             {activeView === "overview" && <OverviewView bizFilter={activeBiz} bizColor={bizColor} profile={profile} clientMembers={clientMembers} />}
-            {activeView === "tasks" && <TasksView bizFilter={activeBiz} profile={profile} clientMembers={clientMembers} />}
+            {activeView === "tasks" && <TasksView bizFilter={activeBiz} bizColor={bizColor} profile={profile} clientMembers={clientMembers} />}
             {activeView === "clients" && <ClientsView bizFilter={activeBiz} bizColor={bizColor} profile={profile} clientMembers={clientMembers} />}
             {activeView === "deliverables" && <DeliverablesView bizFilter={activeBiz} profile={profile} clientMembers={clientMembers} />}
             {activeView === "followups" && <FollowUpsView bizFilter={activeBiz} />}
