@@ -518,6 +518,8 @@ function ClientsView({ bizFilter, bizColor, profile, clientMembers }) {
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
+  const [editId, setEditId] = useState(null);
+  const [editForm, setEditForm] = useState({ name: "", deadline: "" });
   const [form, setForm] = useState({ name: "", deadline: "", progress: 0, status: "on-track" });
   const role = getRole(profile, clientMembers);
   const canAdd = role === "owner" || role === "manager";
@@ -539,13 +541,18 @@ function ClientsView({ bizFilter, bizColor, profile, clientMembers }) {
 
   async function addClient() {
     if (!form.name) return;
-    // FIX: was inserting {manager_id} which doesn't exist — now uses profile_id
     const { data } = await supabase.from("clients").insert([{ ...form, business: bizFilter }]).select().single();
     if (data && role === "manager") {
       await supabase.from("client_members").insert([{ profile_id: profile.id, client_id: data.id, project_role: "Account Manager" }]);
     }
     setShowAdd(false);
     setForm({ name: "", deadline: "", progress: 0, status: "on-track" });
+    load();
+  }
+
+  async function saveEdit(id) {
+    await supabase.from("clients").update({ name: editForm.name, deadline: editForm.deadline }).eq("id", id);
+    setEditId(null);
     load();
   }
 
@@ -575,22 +582,45 @@ function ClientsView({ bizFilter, bizColor, profile, clientMembers }) {
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: "14px" }}>
           {clients.map(p => {
             const barColor = p.status === "critical" ? "#ff6b6b" : p.status === "at-risk" ? "#00C9CC" : bizColor;
+            const isEditing = editId === p.id;
             return (
-              <div key={p.id} style={{ background: "#ffffff", border: "1px solid #e8e8e8", borderRadius: "14px", padding: "20px", transition: "border-color 0.2s, transform 0.2s" }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = "#888888"; e.currentTarget.style.transform = "translateY(-2px)"; }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = "#e8e8e8"; e.currentTarget.style.transform = "translateY(0)"; }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "14px" }}>
-                  <div style={{ flex: 1, marginRight: "10px" }}>
-                    <div style={{ fontSize: "14px", fontWeight: 700, color: "#111111", marginBottom: "3px" }}>{p.name}</div>
-                    <div style={{ fontSize: "11px", color: "#888888" }}>{p.deadline}</div>
+              <div key={p.id} style={{ background: "#ffffff", border: `1px solid ${isEditing ? bizColor + "40" : "#e8e8e8"}`, borderRadius: "14px", padding: "20px", transition: "border-color 0.2s, transform 0.2s" }}
+                onMouseEnter={e => { if (!isEditing) { e.currentTarget.style.borderColor = "#888888"; e.currentTarget.style.transform = "translateY(-2px)"; }}}
+                onMouseLeave={e => { if (!isEditing) { e.currentTarget.style.borderColor = "#e8e8e8"; e.currentTarget.style.transform = "translateY(0)"; }}}>
+                {isEditing ? (
+                  <div>
+                    <div style={{ fontSize: "10px", color: bizColor, fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px", marginBottom: "12px" }}>Edit Client</div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "12px" }}>
+                      <Input label="Name" value={editForm.name} onChange={v => setEditForm({ ...editForm, name: v })} />
+                      <Input label="Deadline" value={editForm.deadline} onChange={v => setEditForm({ ...editForm, deadline: v })} type="date" />
+                    </div>
+                    <div style={{ display: "flex", gap: "8px" }}>
+                      <button onClick={() => saveEdit(p.id)} style={{ flex: 1, padding: "7px", background: bizColor, border: "none", borderRadius: "8px", color: "#000", fontSize: "12px", fontWeight: 700, cursor: "pointer" }}>Save</button>
+                      <button onClick={() => setEditId(null)} style={{ flex: 1, padding: "7px", background: "transparent", border: "1px solid #e8e8e8", borderRadius: "8px", color: "#666666", fontSize: "12px", cursor: "pointer" }}>Cancel</button>
+                    </div>
                   </div>
-                  <Badge status={p.status} />
-                </div>
-                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px" }}>
-                  <span style={{ fontSize: "11px", color: "#666666" }}>Progress</span>
-                  <span style={{ fontSize: "12px", color: barColor, fontWeight: 700 }}>{p.progress}%</span>
-                </div>
-                <ProgressBar value={p.progress} color={barColor} />
+                ) : (
+                  <div>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "14px" }}>
+                      <div style={{ flex: 1, marginRight: "10px" }}>
+                        <div style={{ fontSize: "14px", fontWeight: 700, color: "#111111", marginBottom: "3px" }}>{p.name}</div>
+                        <div style={{ fontSize: "11px", color: "#888888" }}>📅 {p.deadline || "No deadline set"}</div>
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                        <Badge status={p.status} />
+                        {canAdd && (
+                          <button onClick={() => { setEditId(p.id); setEditForm({ name: p.name, deadline: p.deadline || "" }); }}
+                            style={{ padding: "3px 8px", background: "transparent", border: "1px solid #e8e8e8", borderRadius: "6px", color: "#666666", fontSize: "11px", cursor: "pointer" }}>✏️</button>
+                        )}
+                      </div>
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px" }}>
+                      <span style={{ fontSize: "11px", color: "#666666" }}>Progress</span>
+                      <span style={{ fontSize: "12px", color: barColor, fontWeight: 700 }}>{p.progress}%</span>
+                    </div>
+                    <ProgressBar value={p.progress} color={barColor} />
+                  </div>
+                )}
               </div>
             );
           })}
