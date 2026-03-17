@@ -447,11 +447,11 @@ function TasksView({ bizFilter, profile, clientMembers }) {
                 <div style={{ fontSize: "11px", color: "#666666" }}>📅 {task.deadline || "—"}</div>
               </div>
 
-              {canAdd && (
+              {canAdd && !["submitted", "rejected", "done"].includes(task.status) && (
                 <div style={{ marginBottom: "12px" }}>
                   <select value={task.status} onChange={e => updateStatus(task.id, e.target.value)}
                     style={{ background: "#f8f8f8", border: "1px solid #e8e8e8", borderRadius: "8px", padding: "6px 12px", color: "#444444", fontSize: "11px", cursor: "pointer", outline: "none", width: "100%" }}>
-                    {["pending", "in-progress", "done", "overdue"].map(s => <option key={s} value={s}>{s}</option>)}
+                    {["pending", "in-progress", "overdue"].map(s => <option key={s} value={s}>{s}</option>)}
                   </select>
                 </div>
               )}
