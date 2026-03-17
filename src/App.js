@@ -516,6 +516,7 @@ function TasksView({ bizFilter, profile, clientMembers }) {
 // ─── Clients View ────────────────────────────────────────
 function ClientsView({ bizFilter, bizColor, profile, clientMembers }) {
   const [clients, setClients] = useState([]);
+  const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const role = getRole(profile, clientMembers);
 
@@ -527,12 +528,38 @@ function ClientsView({ bizFilter, bizColor, profile, clientMembers }) {
       const ids = (mp || []).map(r => r.client_id);
       if (ids.length) query = query.in("id", ids); else { setClients([]); setLoading(false); return; }
     }
-    const { data } = await query;
-    setClients(data || []);
+    const [{ data: c }, { data: t }] = await Promise.all([
+      query,
+      supabase.from("tasks").select("*").eq("business", bizFilter),
+    ]);
+    setClients(c || []);
+    setTasks(t || []);
     setLoading(false);
   }
 
   useEffect(() => { load(); }, [bizFilter]);
+
+  function getClientStats(clientId) {
+    const clientTasks = tasks.filter(t => t.client_id === clientId);
+    if (clientTasks.length === 0) return { status: "on-track", progress: 0, done: 0, total: 0 };
+    const done = clientTasks.filter(t => t.status === "done").length;
+    const progress = Math.round((done / clientTasks.length) * 100);
+    const today = new Date();
+    let status = "on-track";
+    if (done === clientTasks.length) {
+      status = "completed";
+    } else {
+      for (const t of clientTasks) {
+        if (t.status === "done") continue;
+        if (!t.deadline) continue;
+        const daysLeft = Math.ceil((new Date(t.deadline) - today) / (1000 * 60 * 60 * 24));
+        if (daysLeft < 0) { status = "critical"; break; }
+        if (daysLeft <= 3 && status !== "critical") status = "critical";
+        else if (daysLeft <= 7 && status === "on-track") status = "at-risk";
+      }
+    }
+    return { status, progress, done, total: clientTasks.length };
+  }
 
   if (loading) return <Spinner />;
 
@@ -541,7 +568,8 @@ function ClientsView({ bizFilter, bizColor, profile, clientMembers }) {
       {clients.length === 0 ? <Empty msg="No clients yet." /> : (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: "14px" }}>
           {clients.map(p => {
-            const barColor = p.status === "critical" ? "#ff6b6b" : p.status === "at-risk" ? "#00C9CC" : bizColor;
+            const { status, progress, done, total } = getClientStats(p.id);
+            const barColor = status === "critical" ? "#ff6b6b" : status === "at-risk" ? "#00C9CC" : status === "completed" ? "#4ade80" : bizColor;
             return (
               <div key={p.id} style={{ background: "#ffffff", border: "1px solid #e8e8e8", borderRadius: "14px", padding: "20px", transition: "border-color 0.2s, transform 0.2s" }}
                 onMouseEnter={e => { e.currentTarget.style.borderColor = "#888888"; e.currentTarget.style.transform = "translateY(-2px)"; }}
@@ -549,14 +577,15 @@ function ClientsView({ bizFilter, bizColor, profile, clientMembers }) {
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "14px" }}>
                   <div style={{ flex: 1, marginRight: "10px" }}>
                     <div style={{ fontSize: "14px", fontWeight: 700, color: "#111111", marginBottom: "3px" }}>{p.name}</div>
+                    <div style={{ fontSize: "10px", color: "#888888" }}>{done}/{total} tasks done</div>
                   </div>
-                  <Badge status={p.status} />
+                  <Badge status={status} />
                 </div>
                 <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px" }}>
                   <span style={{ fontSize: "11px", color: "#666666" }}>Progress</span>
-                  <span style={{ fontSize: "12px", color: barColor, fontWeight: 700 }}>{p.progress}%</span>
+                  <span style={{ fontSize: "12px", color: barColor, fontWeight: 700 }}>{progress}%</span>
                 </div>
-                <ProgressBar value={p.progress} color={barColor} />
+                <ProgressBar value={progress} color={barColor} />
               </div>
             );
           })}
