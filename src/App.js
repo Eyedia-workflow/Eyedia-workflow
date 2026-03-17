@@ -292,6 +292,76 @@ function OverviewView({ bizFilter, bizColor, profile, clientMembers }) {
   );
 }
 
+// ─── Task Comments ────────────────────────────────────────
+function TaskComments({ taskId, profile }) {
+  const [comments, setComments] = useState([]);
+  const [msg, setMsg] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [open, setOpen] = useState(false);
+
+  async function loadComments() {
+    setLoading(true);
+    const { data } = await supabase.from("task_comments").select("*, profiles(full_name)").eq("task_id", taskId).order("created_at", { ascending: true });
+    setComments(data || []);
+    setLoading(false);
+  }
+
+  useEffect(() => { if (open) loadComments(); }, [open, taskId]);
+
+  async function addComment() {
+    if (!msg.trim()) return;
+    await supabase.from("task_comments").insert({ task_id: taskId, profile_id: profile.id, message: msg.trim() });
+    setMsg("");
+    loadComments();
+  }
+
+  async function deleteComment(id) {
+    await supabase.from("task_comments").delete().eq("id", id);
+    loadComments();
+  }
+
+  return (
+    <div style={{ borderTop: "1px solid #f0f0f0", marginTop: "12px", paddingTop: "10px" }}>
+      <button onClick={() => setOpen(!open)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: "11px", color: "#888888", fontWeight: 600, padding: 0, display: "flex", alignItems: "center", gap: "4px" }}>
+        💬 {open ? "Hide" : "Comments"} {comments.length > 0 && !open ? `(${comments.length})` : ""}
+      </button>
+      {open && (
+        <div style={{ marginTop: "10px" }}>
+          {loading ? <div style={{ fontSize: "11px", color: "#888" }}>Loading...</div> : (
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "10px" }}>
+              {comments.length === 0 && <div style={{ fontSize: "11px", color: "#aaa" }}>No comments yet.</div>}
+              {comments.map(c => (
+                <div key={c.id} style={{ display: "flex", gap: "8px", alignItems: "flex-start" }}>
+                  <div style={{ width: "24px", height: "24px", borderRadius: "6px", background: "#FFD60020", color: "#FFD600", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "9px", fontWeight: 700, flexShrink: 0 }}>
+                    {c.profiles?.full_name?.split(" ").map(n => n[0]).join("").slice(0, 2)}
+                  </div>
+                  <div style={{ flex: 1, background: "#f8f8f8", borderRadius: "8px", padding: "7px 10px" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "3px" }}>
+                      <span style={{ fontSize: "10px", fontWeight: 700, color: "#444" }}>{c.profiles?.full_name}</span>
+                      <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                        <span style={{ fontSize: "9px", color: "#aaa" }}>{new Date(c.created_at).toLocaleDateString()}</span>
+                        {c.profile_id === profile.id && (
+                          <button onClick={() => deleteComment(c.id)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: "10px", color: "#ff6b6b", padding: 0 }}>×</button>
+                        )}
+                      </div>
+                    </div>
+                    <div style={{ fontSize: "12px", color: "#333", lineHeight: 1.4 }}>{c.message}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          <div style={{ display: "flex", gap: "6px" }}>
+            <input value={msg} onChange={e => setMsg(e.target.value)} onKeyDown={e => e.key === "Enter" && addComment()}
+              placeholder="Write a comment..." style={{ flex: 1, background: "#f8f8f8", border: "1px solid #e8e8e8", borderRadius: "8px", padding: "7px 10px", fontSize: "12px", color: "#111", outline: "none" }} />
+            <button onClick={addComment} style={{ padding: "7px 12px", background: "#FFD60015", border: "1px solid #FFD60030", borderRadius: "8px", color: "#FFD600", fontSize: "12px", fontWeight: 700, cursor: "pointer" }}>↑</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Tasks View ───────────────────────────────────────────
 function TasksView({ bizFilter, profile, clientMembers }) {
   const [tasks, setTasks] = useState([]);
@@ -511,6 +581,7 @@ function TasksView({ bizFilter, profile, clientMembers }) {
                   </div>
                 ) : null}
               </div>
+              <TaskComments taskId={task.id} profile={profile} />
             </div>
           ))}
         </div>
