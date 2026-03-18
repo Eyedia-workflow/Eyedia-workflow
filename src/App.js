@@ -1499,11 +1499,40 @@ export default function EyediaApp() {
     const { data: members } = await supabase.from("client_members").select("*");
     if (members) setClientMembers(members);
     loadNotifications(uid);
+    registerPushNotifications(uid);
+  }
+
+  async function registerPushNotifications(uid) {
+    try {
+      if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+      
+      // Register service worker
+      const reg = await navigator.serviceWorker.register('/service-worker.js');
+      
+      // Ask permission
+      const permission = await Notification.requestPermission();
+      if (permission !== 'granted') return;
+
+      console.log('Push notifications enabled!');
+    } catch (e) {
+      console.log('Push notification setup failed:', e);
+    }
   }
 
   async function loadNotifications(uid) {
     const { data } = await supabase.from("notifications").select("*").eq("profile_id", uid).order("created_at", { ascending: false }).limit(20);
+    const prev = notifications.length;
     setNotifications(data || []);
+    // Show device notification if new unread ones arrived
+    const unread = (data || []).filter(n => !n.read);
+    if (unread.length > 0 && prev < unread.length && Notification.permission === 'granted') {
+      const latest = unread[0];
+      new Notification('We Are Eyedia', {
+        body: latest.message,
+        icon: '/logo192.png',
+        badge: '/logo192.png',
+      });
+    }
   }
 
   async function markAllRead() {
