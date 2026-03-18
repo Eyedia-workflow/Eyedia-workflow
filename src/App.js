@@ -687,6 +687,7 @@ function TasksView({ bizFilter, profile, clientMembers, bizColor }) {
     const { data: newTask } = await supabase.from("tasks").insert([{ ...form, business: bizFilter }]).select().single();
     if (newTask && form.assigned_to) {
       await supabase.from("notifications").insert({ profile_id: form.assigned_to, message: `You've been assigned a new task: "${form.title}"`, type: "assigned", task_id: newTask.id });
+      sendPush(form.assigned_to, "New Task Assigned 📋", `You've been assigned: "${form.title}"`);
     }
     setShowAdd(false);
     setForm({ title: "", description: "", assigned_to: "", client_id: "", deadline: "", status: "pending", priority: "normal" });
@@ -727,6 +728,7 @@ function TasksView({ bizFilter, profile, clientMembers, bizColor }) {
     const task = tasks.find(t => t.id === id);
     if (task?.assigned_to) {
       await supabase.from("notifications").insert({ profile_id: task.assigned_to, message: `Your task "${task.title}" was approved! ✅`, type: "approved", task_id: id });
+      sendPush(task.assigned_to, "Task Approved ✅", `"${task.title}" was approved!`);
     }
     load();
   }
@@ -738,6 +740,7 @@ function TasksView({ bizFilter, profile, clientMembers, bizColor }) {
     const task = tasks.find(t => t.id === id);
     if (task?.assigned_to) {
       await supabase.from("notifications").insert({ profile_id: task.assigned_to, message: `Your task "${task.title}" was rejected. Reason: ${reason || "Please resubmit"}`, type: "rejected", task_id: id });
+      sendPush(task.assigned_to, "Task Rejected ❌", `"${task.title}" was rejected. Please resubmit.`);
     }
     load();
   }
@@ -1557,6 +1560,21 @@ export default function EyediaApp() {
         icon: '/logo192.png',
         badge: '/logo192.png',
       });
+    }
+  }
+
+  async function sendPush(profile_id, title, message) {
+    try {
+      await fetch("https://nbojegbpyzfhfeqoiebn.supabase.co/functions/v1/send-push", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ib2plZ2JweXpmaGZlcW9pZWJuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5OTQ2NjQsImV4cCI6MjA4ODU3MDY2NH0.TtHMGuKqpSpE8sPaSLVhdXi5yKTJEaWsMx7cdqTGpek",
+        },
+        body: JSON.stringify({ profile_id, title, message }),
+      });
+    } catch (e) {
+      console.log("Push send failed:", e);
     }
   }
 
