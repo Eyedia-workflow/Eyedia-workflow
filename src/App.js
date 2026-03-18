@@ -1150,6 +1150,8 @@ function DeliverablesView({ bizFilter, profile, clientMembers }) {
 function FollowUpsView({ bizFilter }) {
   const [alerts, setAlerts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [generating, setGenerating] = useState(false);
+  const [reportMsg, setReportMsg] = useState("");
 
   async function load() {
     setLoading(true);
@@ -1163,7 +1165,36 @@ function FollowUpsView({ bizFilter }) {
   async function dismiss(id) { await supabase.from("followup_alerts").update({ dismissed: true }).eq("id", id); load(); }
   async function markSent(id) { await supabase.from("followup_alerts").update({ sent_whatsapp: true }).eq("id", id); load(); }
 
+  async function generateReport(type) {
+    setGenerating(true);
+    setReportMsg("");
+    try {
+      const res = await fetch("https://nbojegbpyzfhfeqoiebn.supabase.co/functions/v1/claude-insights", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ib2plZ2JweXpmaGZlcW9pZWJuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5OTQ2NjQsImV4cCI6MjA4ODU3MDY2NH0.TtHMGuKqpSpE8sPaSLVhdXi5yKTJEaWsMx7cdqTGpek",
+          "apikey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ib2plZ2JweXpmaGZlcW9pZWJuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5OTQ2NjQsImV4cCI6MjA4ODU3MDY2NH0.TtHMGuKqpSpE8sPaSLVhdXi5yKTJEaWsMx7cdqTGpek"
+        },
+        body: JSON.stringify({ type }),
+      });
+      const data = await res.json();
+      if (data.error) setReportMsg("❌ " + data.error);
+      else { setReportMsg("✅ Report generated and sent to your WhatsApp!"); load(); }
+    } catch (e) {
+      setReportMsg("❌ Failed: " + e.message);
+    }
+    setGenerating(false);
+  }
+
   if (loading) return <Spinner />;
+
+  const REPORTS = [
+    { type: "performance_report", label: "📊 Performance Report", desc: "Late tasks, rejection rates, team stats" },
+    { type: "daily_summary", label: "☀️ Daily Summary", desc: "Today's snapshot & priorities" },
+    { type: "weekly_summary", label: "📅 Weekly Report", desc: "This week's wins, risks & focus" },
+    { type: "monthly_summary", label: "🗓️ Monthly Report", desc: "Full month KPIs & recommendations" },
+  ];
 
   return (
     <div style={{ maxWidth: "700px" }}>
@@ -1171,8 +1202,27 @@ function FollowUpsView({ bizFilter }) {
         <div style={{ width: "7px", height: "7px", background: "#FFD600", borderRadius: "50%", animation: "pulse 2s infinite", flexShrink: 0 }} />
         <span style={{ fontSize: "12px", color: "#444444" }}>Claude AI monitors your team and surfaces issues here in real time</span>
       </div>
+
+      {/* Generate Report Section */}
+      <div style={{ background: "#ffffff", border: "1px solid #e8e8e8", borderRadius: "14px", padding: "20px", marginBottom: "20px" }}>
+        <div style={{ fontSize: "11px", color: "#666", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px", marginBottom: "14px" }}>🤖 Generate AI Report</div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", marginBottom: "12px" }}>
+          {REPORTS.map(r => (
+            <button key={r.type} onClick={() => generateReport(r.type)} disabled={generating}
+              style={{ padding: "10px 12px", background: generating ? "#f8f8f8" : "#FFD60008", border: "1px solid #FFD60025", borderRadius: "10px", cursor: generating ? "not-allowed" : "pointer", textAlign: "left" }}>
+              <div style={{ fontSize: "12px", fontWeight: 700, color: generating ? "#aaa" : "#111", marginBottom: "2px" }}>{r.label}</div>
+              <div style={{ fontSize: "10px", color: "#888" }}>{r.desc}</div>
+            </button>
+          ))}
+        </div>
+        {generating && <div style={{ fontSize: "12px", color: "#FFD600", fontWeight: 600 }}>⏳ Generating report & sending to WhatsApp...</div>}
+        {reportMsg && <div style={{ fontSize: "12px", color: reportMsg.startsWith("✅") ? "#4ade80" : "#ff6b6b", fontWeight: 600 }}>{reportMsg}</div>}
+      </div>
+
+      {/* Alerts */}
+      <div style={{ fontSize: "11px", color: "#666", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px", marginBottom: "12px" }}>AI Alerts</div>
       {alerts.length === 0
-        ? <div style={{ textAlign: "center", padding: "60px", color: "#999999", fontSize: "13px" }}>🎉 All clear — no pending follow-ups!</div>
+        ? <div style={{ textAlign: "center", padding: "40px", color: "#999999", fontSize: "13px" }}>🎉 All clear — no pending follow-ups!</div>
         : alerts.map(f => (
           <div key={f.id} style={{ borderLeft: `3px solid ${f.alert_type === "critical" ? "#ff6b6b" : "#00C9CC"}`, background: "#ffffff", borderRadius: "0 12px 12px 0", padding: "16px 18px", marginBottom: "10px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px", flexWrap: "wrap", gap: "6px" }}>
