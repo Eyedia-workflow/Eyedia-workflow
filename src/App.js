@@ -651,7 +651,7 @@ function TasksView({ bizFilter, profile, clientMembers, bizColor }) {
       const { data: mp } = await supabase.from("client_members").select("client_id").eq("profile_id", profile.id).ilike("project_role", "%manager%");
       projIds = (mp || []).map(r => r.client_id);
     }
-    let taskQuery = supabase.from("tasks").select("*, profiles(full_name), clients(name)").eq("business", bizFilter);
+    let taskQuery = supabase.from("tasks").select("*, profiles(full_name), clients(name, drive_folder)").eq("business", bizFilter);
     if (role === "employee") taskQuery = taskQuery.eq("assigned_to", profile.id);
     else if (role === "manager") {
       if (projIds && projIds.length) taskQuery = taskQuery.in("client_id", projIds);
@@ -854,6 +854,9 @@ function TasksView({ bizFilter, profile, clientMembers, bizColor }) {
                         <div style={{ fontSize: "10px", color: "#888" }}>👤 {task.profiles?.full_name || "—"}</div>
                         <div style={{ fontSize: "10px", color: "#888" }}>📁 {task.clients?.name || "—"}</div>
                         {task.deadline && <div style={{ fontSize: "10px", color: "#888" }}>📅 {task.deadline}</div>}
+                        {task.clients?.drive_folder && (
+                          <a href={task.clients.drive_folder} target="_blank" rel="noreferrer" style={{ fontSize: "10px", color: "#00C9CC", fontWeight: 600, textDecoration: "none" }}>🗂️ Drive</a>
+                        )}
                       </div>
 
                       {/* Status badge */}
@@ -1174,6 +1177,7 @@ function AdminView({ bizFilter, bizColor, profile }) {
   const [clientName, setClientName] = useState("");
   const [clientStatus, setClientStatus] = useState("on-track");
   const [clientDeadline, setClientDeadline] = useState("");
+  const [clientDrive, setClientDrive] = useState("");
 
   // Employee form
   const [newName, setNewName] = useState("");
@@ -1209,13 +1213,13 @@ function AdminView({ bizFilter, bizColor, profile }) {
   async function saveClient() {
     if (!clientName) return;
     if (editClient) {
-      await supabase.from("clients").update({ name: clientName, status: clientStatus, deadline: clientDeadline || "2026-12-31" }).eq("id", editClient);
+      await supabase.from("clients").update({ name: clientName, status: clientStatus, deadline: clientDeadline || "2026-12-31", drive_folder: clientDrive || null }).eq("id", editClient);
       flash("✅ Client updated!");
     } else {
-      await supabase.from("clients").insert({ name: clientName, business: bizFilter, status: clientStatus, deadline: clientDeadline || "2026-12-31" });
+      await supabase.from("clients").insert({ name: clientName, business: bizFilter, status: clientStatus, deadline: clientDeadline || "2026-12-31", drive_folder: clientDrive || null });
       flash("✅ Client added!");
     }
-    setEditClient(null); setClientName(""); setClientStatus("on-track"); setClientDeadline("");
+    setEditClient(null); setClientName(""); setClientStatus("on-track"); setClientDeadline(""); setClientDrive("");
     loadAll();
   }
 
@@ -1226,7 +1230,7 @@ function AdminView({ bizFilter, bizColor, profile }) {
   }
 
   function startEditClient(c) {
-    setEditClient(c.id); setClientName(c.name); setClientStatus(c.status); setClientDeadline(c.deadline || "");
+    setEditClient(c.id); setClientName(c.name); setClientStatus(c.status); setClientDeadline(c.deadline || ""); setClientDrive(c.drive_folder || "");
     setTab("clients");
   }
 
@@ -1292,6 +1296,10 @@ function AdminView({ bizFilter, bizColor, profile }) {
               <div>
                 <label style={labelStyle}>Deadline</label>
                 <input type="date" style={inputStyle} value={clientDeadline} onChange={e => setClientDeadline(e.target.value)} />
+              </div>
+              <div>
+                <label style={labelStyle}>Google Drive Folder URL</label>
+                <input style={inputStyle} value={clientDrive} onChange={e => setClientDrive(e.target.value)} placeholder="https://drive.google.com/drive/folders/..." />
               </div>
               <div>
                 <label style={labelStyle}>Status</label>
