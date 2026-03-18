@@ -73,7 +73,7 @@ function RolePill({ profile, clientMembers }) {
   const rb = ROLE_BADGE[role];
   const label = role === "owner" ? getOwnerLabel(profile) : rb.label;
   const title = profile?.title?.toLowerCase();
-  const ownerColor = title === "director" ? "#00C9CC" : "#a855f7";
+  const ownerColor = title === "ceo" ? "#a855f7" : "#00C9CC";
   const color = role === "owner" ? ownerColor : rb.color;
   return (
     <span style={{ fontSize: "9px", color: color, background: `${color}15`, padding: "2px 8px", borderRadius: "10px", fontWeight: 700, letterSpacing: "0.5px" }}>{label}</span>
@@ -527,7 +527,7 @@ function OverviewView({ bizFilter, bizColor, profile, clientMembers }) {
                   {emp.is_owner ? (
                     (() => {
                       const t = emp.title?.toLowerCase();
-                      const c = t === "director" ? "#00C9CC" : "#a855f7";
+                      const c = t === "ceo" ? "#a855f7" : "#00C9CC";
                       return (
                         <span style={{ fontSize: "9px", fontWeight: 700, padding: "2px 7px", borderRadius: "8px", background: `${c}15`, color: c, border: `1px solid ${c}25` }}>
                           {emp.title || "CEO"} · All Clients
