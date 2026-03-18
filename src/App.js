@@ -129,12 +129,8 @@ function AuthScreen({ onLogin }) {
       <style>{`@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&family=Bebas+Neue&display=swap');`}</style>
       <div style={{ width: "380px", background: "#ffffff", border: "1px solid #e8e8e8", borderRadius: "20px", padding: "40px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "32px" }}>
-          <div style={{ width: "36px", height: "36px", borderRadius: "10px", background: "#ffffff", border: "1px solid #e8e8e8", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <svg viewBox="0 0 100 100" width="22" height="22">
-              <ellipse cx="50" cy="38" rx="28" ry="26" fill="#FFD600" />
-              <circle cx="50" cy="38" r="11" fill="#00C9CC" />
-              <rect x="43" y="63" width="14" height="18" rx="4" fill="white" opacity="0.7" />
-            </svg>
+          <div style={{ width: "44px", height: "44px", borderRadius: "10px", overflow: "hidden" }}>
+            <img src="/logo.png" alt="Eyedia" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={e => { e.target.style.display="none"; }} />
           </div>
           <div>
             <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: "16px", letterSpacing: "2.5px", color: "#111111" }}>WE ARE EYEDIA</div>
