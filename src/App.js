@@ -867,7 +867,12 @@ function TasksView({ bizFilter, profile, clientMembers, bizColor }) {
 
                       {/* Task title + delete */}
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "8px" }}>
-                        <div style={{ fontSize: "12px", fontWeight: 700, color: "#111", flex: 1, marginRight: "6px", lineHeight: 1.3 }}>{task.title}</div>
+                        <div style={{ display: "flex", alignItems: "center", gap: "6px", flex: 1, marginRight: "6px" }}>
+                        <div style={{ fontSize: "12px", fontWeight: 700, color: "#111", lineHeight: 1.3 }}>{task.title}</div>
+                        {task.assigned_to === profile?.id && task.status === "pending" && new Date(task.created_at) > new Date(Date.now() - 24*60*60*1000) && (
+                          <span style={{ width: "7px", height: "7px", borderRadius: "50%", background: "#ff6b6b", flexShrink: 0, animation: "pulse 2s infinite" }} />
+                        )}
+                      </div>
                         {canAdd && <button onClick={() => deleteTask(task.id)} style={{ padding: "2px 5px", background: "transparent", border: "none", color: "#cccccc", fontSize: "11px", cursor: "pointer", flexShrink: 0 }}>🗑️</button>}
                       </div>
 
@@ -1523,6 +1528,31 @@ export default function EyediaApp() {
     }
   }, [activeBiz, profile]);
 
+  // Real-time notification listener
+  useEffect(() => {
+    if (!profile?.id) return;
+    const channel = supabase
+      .channel('notifications-' + profile.id)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'notifications',
+        filter: `profile_id=eq.${profile.id}`
+      }, (payload) => {
+        setNotifications(prev => [payload.new, ...prev]);
+        // Show device notification
+        if (Notification.permission === 'granted') {
+          new Notification('We Are Eyedia 🧠', {
+            body: payload.new.message,
+            icon: '/logo192.png',
+            badge: '/logo192.png',
+          });
+        }
+      })
+      .subscribe();
+    return () => supabase.removeChannel(channel);
+  }, [profile?.id]);
+
   async function loadProfile(uid) {
     const { data } = await supabase.from("profiles").select("*").eq("id", uid).single();
     if (data) { setProfile(data); if (data.business && data.business !== "both") setActiveBiz(data.business); }
@@ -1565,19 +1595,28 @@ export default function EyediaApp() {
 
   async function loadNotifications(uid) {
     const { data } = await supabase.from("notifications").select("*").eq("profile_id", uid).order("created_at", { ascending: false }).limit(20);
-    const prev = notifications.length;
+    const prevUnread = notifications.filter(n => !n.read).length;
     setNotifications(data || []);
+    const newUnread = (data || []).filter(n => !n.read);
     // Show device notification if new unread ones arrived
-    const unread = (data || []).filter(n => !n.read);
-    if (unread.length > 0 && prev < unread.length && Notification.permission === 'granted') {
-      const latest = unread[0];
-      new Notification('We Are Eyedia', {
+    if (newUnread.length > prevUnread && Notification.permission === 'granted') {
+      const latest = newUnread[0];
+      new Notification('We Are Eyedia 🧠', {
         body: latest.message,
         icon: '/logo192.png',
         badge: '/logo192.png',
       });
     }
   }
+
+  // Poll for new notifications every 30 seconds
+  useEffect(() => {
+    if (!profile) return;
+    const interval = setInterval(() => {
+      loadNotifications(profile.id);
+    }, 30000);
+    return () => clearInterval(interval);
+  }, [profile]);
 
   async function markAllRead() {
     if (!profile) return;
@@ -1596,7 +1635,7 @@ export default function EyediaApp() {
 
   const navItems = [
     { id: "overview", label: "Overview", icon: "⬡" },
-    { id: "tasks", label: role === "employee" ? "My Tasks" : "Tasks", icon: "◈" },
+    { id: "tasks", label: role === "employee" ? "My Tasks" : "Tasks", icon: "◈", alert: notifications.filter(n => !n.read && n.type === "assigned").length || 0 },
     { id: "clients", label: "Clients", icon: "◻" },
     { id: "deliverables", label: "Deliverables", icon: "◷" },
     ...(role === "owner" ? [{ id: "followups", label: "Follow-ups", icon: "⚡", alert: alertCount }] : []),
@@ -1674,10 +1713,10 @@ export default function EyediaApp() {
           {/* Bell icon */}
           <div style={{ position: "relative" }}>
             <button onClick={() => { setShowNotifs(!showNotifs); if (!showNotifs) markAllRead(); }}
-              style={{ position: "relative", padding: "4px 8px", background: "#ffffff", border: "1px solid #eeeeee", borderRadius: "8px", cursor: "pointer", fontSize: "14px" }}>
+              style={{ position: "relative", padding: "4px 8px", background: notifications.filter(n => !n.read).length > 0 ? "#ff6b6b10" : "#ffffff", border: `1px solid ${notifications.filter(n => !n.read).length > 0 ? "#ff6b6b30" : "#eeeeee"}`, borderRadius: "8px", cursor: "pointer", fontSize: "14px" }}>
               🔔
               {notifications.filter(n => !n.read).length > 0 && (
-                <span style={{ position: "absolute", top: "-4px", right: "-4px", background: "#ff6b6b", color: "white", fontSize: "8px", fontWeight: 800, padding: "1px 4px", borderRadius: "8px", minWidth: "14px", textAlign: "center" }}>
+                <span style={{ position: "absolute", top: "-4px", right: "-4px", background: "#ff6b6b", color: "white", fontSize: "8px", fontWeight: 800, padding: "1px 4px", borderRadius: "8px", minWidth: "14px", textAlign: "center", animation: "pulse 2s infinite" }}>
                   {notifications.filter(n => !n.read).length}
                 </span>
               )}
