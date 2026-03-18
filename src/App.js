@@ -561,6 +561,22 @@ function OverviewView({ bizFilter, bizColor, profile, clientMembers }) {
   );
 }
 
+// ─── Push Notification Helper ────────────────────────────
+async function sendPush(profile_id, title, message) {
+  try {
+    await fetch("https://nbojegbpyzfhfeqoiebn.supabase.co/functions/v1/send-push", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ib2plZ2JweXpmaGZlcW9pZWJuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5OTQ2NjQsImV4cCI6MjA4ODU3MDY2NH0.TtHMGuKqpSpE8sPaSLVhdXi5yKTJEaWsMx7cdqTGpek",
+      },
+      body: JSON.stringify({ profile_id, title, message }),
+    });
+  } catch (e) {
+    console.log("Push send failed:", e);
+  }
+}
+
 // ─── Task Comments ────────────────────────────────────────
 function TaskComments({ taskId, profile }) {
   const [comments, setComments] = useState([]);
@@ -1560,21 +1576,6 @@ export default function EyediaApp() {
         icon: '/logo192.png',
         badge: '/logo192.png',
       });
-    }
-  }
-
-  async function sendPush(profile_id, title, message) {
-    try {
-      await fetch("https://nbojegbpyzfhfeqoiebn.supabase.co/functions/v1/send-push", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ib2plZ2JweXpmaGZlcW9pZWJuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5OTQ2NjQsImV4cCI6MjA4ODU3MDY2NH0.TtHMGuKqpSpE8sPaSLVhdXi5yKTJEaWsMx7cdqTGpek",
-        },
-        body: JSON.stringify({ profile_id, title, message }),
-      });
-    } catch (e) {
-      console.log("Push send failed:", e);
     }
   }
 
