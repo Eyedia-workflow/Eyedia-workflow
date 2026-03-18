@@ -640,7 +640,7 @@ function TasksView({ bizFilter, profile, clientMembers, bizColor }) {
   const [showAdd, setShowAdd] = useState(false);
   const [linkInputs, setLinkInputs] = useState({});
   const [dragOver, setDragOver] = useState(null);
-  const [form, setForm] = useState({ title: "", description: "", assigned_to: "", client_id: "", deadline: "", status: "pending", priority: "normal" });
+  const [form, setForm] = useState({ title: "", description: "", assigned_to: "", client_id: "", deadline: "", status: "pending", priority: "normal", drive_folder: "" });
   const role = getRole(profile, clientMembers);
   const canAdd = role === "owner" || role === "manager";
 
@@ -797,10 +797,13 @@ function TasksView({ bizFilter, profile, clientMembers, bizColor }) {
             <Select label="Client" value={form.client_id} onChange={v => setForm({ ...form, client_id: v })}
               options={[{ value: "", label: "Select client" }, ...clients.map(p => ({ value: p.id, label: p.name }))]} />
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "14px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "10px" }}>
             <Input label="Description (optional)" value={form.description} onChange={v => setForm({ ...form, description: v })} placeholder="Brief description..." />
             <Select label="Priority" value={form.priority} onChange={v => setForm({ ...form, priority: v })}
               options={[{ value: "urgent", label: "🔴 Urgent" }, { value: "high", label: "🟠 High" }, { value: "normal", label: "🔵 Normal" }, { value: "low", label: "⚪ Low" }]} />
+          </div>
+          <div style={{ marginBottom: "14px" }}>
+            <Input label="🗂️ Drive Folder URL (optional)" value={form.drive_folder} onChange={v => setForm({ ...form, drive_folder: v })} placeholder="https://drive.google.com/drive/folders/..." />
           </div>
           <div style={{ display: "flex", gap: "8px" }}>
             <button onClick={addTask} style={{ padding: "8px 18px", background: "#FFD600", border: "none", borderRadius: "8px", color: "#000", fontSize: "12px", fontWeight: 700, cursor: "pointer" }}>Save Task</button>
@@ -854,8 +857,8 @@ function TasksView({ bizFilter, profile, clientMembers, bizColor }) {
                         <div style={{ fontSize: "10px", color: "#888" }}>👤 {task.profiles?.full_name || "—"}</div>
                         <div style={{ fontSize: "10px", color: "#888" }}>📁 {task.clients?.name || "—"}</div>
                         {task.deadline && <div style={{ fontSize: "10px", color: "#888" }}>📅 {task.deadline}</div>}
-                        {task.clients?.drive_folder && (
-                          <a href={task.clients.drive_folder} target="_blank" rel="noreferrer" style={{ fontSize: "10px", color: "#00C9CC", fontWeight: 600, textDecoration: "none" }}>🗂️ Drive</a>
+                        {task.drive_folder && (
+                          <a href={task.drive_folder} target="_blank" rel="noreferrer" style={{ fontSize: "10px", color: "#00C9CC", fontWeight: 600, textDecoration: "none" }}>🗂️ Drive Folder</a>
                         )}
                       </div>
 
