@@ -322,7 +322,7 @@ function OverviewView({ bizFilter, bizColor, profile, clientMembers }) {
     const myInProgress = myTasks.filter(t => t.status === "in-progress").length;
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-        <div style={{ className: undefined }}>
+        <div className="stats-grid">
           {[
             { label: "My Tasks", value: myTasks.length, sub: "total assigned", color: bizColor, icon: "◈" },
             { label: "Done", value: myDone, sub: "completed", color: "#4ade80", icon: "✅" },
@@ -362,7 +362,7 @@ function OverviewView({ bizFilter, bizColor, profile, clientMembers }) {
   if (role === "manager") {
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-        <div style={{ className: undefined }}>
+        <div className="stats-grid">
           {[
             { label: "My Clients", value: enrichedClients.length, sub: `${enrichedClients.filter(p => p.status === "completed").length} completed`, color: bizColor, icon: "◻" },
             { label: "Total Tasks", value: totalTasks, sub: `${doneTasks} done`, color: "#4ade80", icon: "◈" },
@@ -416,7 +416,7 @@ function OverviewView({ bizFilter, bizColor, profile, clientMembers }) {
     <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
 
       {/* ── Row 1: Stats ── */}
-      <div style={{ className: undefined }}>
+      <div className="stats-grid">
         {[
           { label: "Team Members", value: employees.length, sub: `in ${bizFilter}`, color: bizColor, icon: "◈" },
           { label: "Active Clients", value: enrichedClients.filter(p => p.status !== "completed").length, sub: `${enrichedClients.filter(p => p.status === "completed").length} completed`, color: "#4ade80", icon: "◻" },
