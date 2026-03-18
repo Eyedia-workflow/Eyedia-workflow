@@ -657,7 +657,7 @@ function TasksView({ bizFilter, profile, clientMembers, bizColor }) {
     ]);
     setTasks(t || []);
     setClients(p || []);
-    setEmployees((e || []).filter(p => !p.is_owner));
+    setEmployees(e || []); // include owners (Directors) so they can be assigned tasks
     setLoading(false);
   }
 
