@@ -1694,11 +1694,10 @@ export default function EyediaApp() {
       {/* ── MOBILE BOTTOM NAV ── */}
       <div className="mobile-bottom-nav" style={{
         position: "fixed", bottom: 0, left: 0, right: 0,
-        height: "calc(64px + env(safe-area-inset-bottom))",
+        height: "56px",
         background: "#ffffff", borderTop: "1px solid #e8e8e8",
-        display: "flex", alignItems: "flex-start", justifyContent: "space-around",
-        zIndex: 200, paddingBottom: "env(safe-area-inset-bottom)",
-        paddingTop: "8px",
+        display: "flex", alignItems: "center", justifyContent: "space-around",
+        zIndex: 200,
       }}>
         {navItems.map(item => (
           <button key={item.id} onClick={() => setActiveView(item.id)} style={{
