@@ -1519,10 +1519,24 @@ export default function EyediaApp() {
       
       // Register service worker
       const reg = await navigator.serviceWorker.register('/service-worker.js');
+      await navigator.serviceWorker.ready;
       
       // Ask permission
       const permission = await Notification.requestPermission();
       if (permission !== 'granted') return;
+
+      // Subscribe to push
+      const VAPID_PUBLIC_KEY = 'BHmwT9z_8uXdbg_pCe18zQtDO49s6JVA_FILeowX5PY5ZoWzv4sRlemSRm9CUW6ywJyvSgsm1UfirnaJVxDdTKQ';
+      const subscription = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: VAPID_PUBLIC_KEY
+      });
+
+      // Save subscription to Supabase
+      await supabase.from('push_subscriptions').upsert({
+        profile_id: uid,
+        subscription: subscription.toJSON()
+      }, { onConflict: 'profile_id' });
 
       console.log('Push notifications enabled!');
     } catch (e) {
