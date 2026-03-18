@@ -140,17 +140,29 @@ function AuthScreen({ onLogin }) {
         <div style={{ fontSize: "18px", fontWeight: 700, color: "#111111", marginBottom: "6px" }}>Welcome back</div>
         <div style={{ fontSize: "12px", color: "#666666", marginBottom: "28px" }}>Sign in to access your dashboard</div>
         {error && <div style={{ background: "#ff6b6b15", border: "1px solid #ff6b6b30", borderRadius: "8px", padding: "10px 14px", fontSize: "12px", color: "#ff6b6b", marginBottom: "16px" }}>{error}</div>}
-        <div style={{ marginBottom: "14px" }}>
-          <Input label="Email" value={email} onChange={setEmail} type="email" placeholder="you@eyedia.com" />
-        </div>
-        <div style={{ marginBottom: "24px" }}>
-          <Input label="Password" value={password} onChange={setPassword} type="password" placeholder="••••••••" />
-        </div>
-        <button onClick={login} disabled={loading} style={{
-          width: "100%", padding: "12px", background: loading ? "#e8e8e8" : "#FFD600", border: "none",
-          borderRadius: "10px", color: loading ? "#666666" : "#000", fontSize: "13px", fontWeight: 700,
-          cursor: loading ? "not-allowed" : "pointer", transition: "all 0.2s"
-        }}>{loading ? "Signing in..." : "Sign In →"}</button>
+        <form onSubmit={e => { e.preventDefault(); login(); }} autoComplete="on">
+          <div style={{ marginBottom: "14px" }}>
+            <div style={{ fontSize: "10px", color: "#666666", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.8px", marginBottom: "5px" }}>Email</div>
+            <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@eyedia.com"
+              autoComplete="email" name="email"
+              style={{ width: "100%", background: "#ffffff", border: "1px solid #e8e8e8", borderRadius: "8px", padding: "8px 12px", color: "#111111", fontSize: "12px", outline: "none" }} />
+          </div>
+          <div style={{ marginBottom: "20px" }}>
+            <div style={{ fontSize: "10px", color: "#666666", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.8px", marginBottom: "5px" }}>Password</div>
+            <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••"
+              autoComplete="current-password" name="password"
+              style={{ width: "100%", background: "#ffffff", border: "1px solid #e8e8e8", borderRadius: "8px", padding: "8px 12px", color: "#111111", fontSize: "12px", outline: "none" }} />
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "24px" }}>
+            <input type="checkbox" id="remember" defaultChecked style={{ accentColor: "#FFD600", width: "14px", height: "14px", cursor: "pointer" }} />
+            <label htmlFor="remember" style={{ fontSize: "12px", color: "#666666", cursor: "pointer" }}>Remember me</label>
+          </div>
+          <button type="submit" disabled={loading} style={{
+            width: "100%", padding: "12px", background: loading ? "#e8e8e8" : "#FFD600", border: "none",
+            borderRadius: "10px", color: loading ? "#666666" : "#000", fontSize: "13px", fontWeight: 700,
+            cursor: loading ? "not-allowed" : "pointer", transition: "all 0.2s"
+          }}>{loading ? "Signing in..." : "Sign In →"}</button>
+        </form>
       </div>
     </div>
   );
