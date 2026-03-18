@@ -322,7 +322,7 @@ function OverviewView({ bizFilter, bizColor, profile, clientMembers }) {
     const myInProgress = myTasks.filter(t => t.status === "in-progress").length;
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px" }}>
+        <div style={{ className: undefined }}>
           {[
             { label: "My Tasks", value: myTasks.length, sub: "total assigned", color: bizColor, icon: "◈" },
             { label: "Done", value: myDone, sub: "completed", color: "#4ade80", icon: "✅" },
@@ -362,7 +362,7 @@ function OverviewView({ bizFilter, bizColor, profile, clientMembers }) {
   if (role === "manager") {
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px" }}>
+        <div style={{ className: undefined }}>
           {[
             { label: "My Clients", value: enrichedClients.length, sub: `${enrichedClients.filter(p => p.status === "completed").length} completed`, color: bizColor, icon: "◻" },
             { label: "Total Tasks", value: totalTasks, sub: `${doneTasks} done`, color: "#4ade80", icon: "◈" },
@@ -416,7 +416,7 @@ function OverviewView({ bizFilter, bizColor, profile, clientMembers }) {
     <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
 
       {/* ── Row 1: Stats ── */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px" }}>
+      <div style={{ className: undefined }}>
         {[
           { label: "Team Members", value: employees.length, sub: `in ${bizFilter}`, color: bizColor, icon: "◈" },
           { label: "Active Clients", value: enrichedClients.filter(p => p.status !== "completed").length, sub: `${enrichedClients.filter(p => p.status === "completed").length} completed`, color: "#4ade80", icon: "◻" },
@@ -435,7 +435,7 @@ function OverviewView({ bizFilter, bizColor, profile, clientMembers }) {
       </div>
 
       {/* ── Row 2: Donut + Workload ── */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+      <div className="two-col-grid">
 
         {/* Tasks by status donut */}
         <div style={{ background: "#ffffff", border: "1px solid #e8e8e8", borderRadius: "14px", padding: "20px" }}>
@@ -474,7 +474,7 @@ function OverviewView({ bizFilter, bizColor, profile, clientMembers }) {
       </div>
 
       {/* ── Row 3: Client progress + Team ── */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+      <div className="two-col-grid">
 
         {/* Client completion */}
         <div style={{ background: "#ffffff", border: "1px solid #e8e8e8", borderRadius: "14px", padding: "20px" }}>
@@ -1534,11 +1534,15 @@ export default function EyediaApp() {
         @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
         @keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
         .fade-in { animation: fadeIn 0.25s ease forwards; }
+        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+        .two-col-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
         @media (max-width: 767px) {
           .desktop-sidebar { display: none !important; }
           .desktop-topbar-right { display: none !important; }
-          .main-content { padding: 16px !important; padding-bottom: 80px !important; }
+          .main-content { padding: 12px !important; padding-bottom: 80px !important; }
           .biz-toggle button { padding: 6px 10px !important; font-size: 11px !important; }
+          .stats-grid { grid-template-columns: repeat(2, 1fr) !important; }
+          .two-col-grid { grid-template-columns: 1fr !important; }
         }
         @media (min-width: 768px) {
           .mobile-bottom-nav { display: none !important; }
