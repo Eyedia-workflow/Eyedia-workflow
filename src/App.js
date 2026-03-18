@@ -1539,7 +1539,7 @@ export default function EyediaApp() {
         @media (max-width: 767px) {
           .desktop-sidebar { display: none !important; }
           .desktop-topbar-right { display: none !important; }
-          .main-content { padding: 12px !important; padding-bottom: 80px !important; }
+          .main-content { padding: 12px !important; padding-bottom: calc(80px + env(safe-area-inset-bottom)) !important; }
           .biz-toggle button { padding: 6px 10px !important; font-size: 11px !important; }
           .stats-grid { grid-template-columns: repeat(2, 1fr) !important; }
           .two-col-grid { grid-template-columns: 1fr !important; }
@@ -1693,10 +1693,12 @@ export default function EyediaApp() {
 
       {/* ── MOBILE BOTTOM NAV ── */}
       <div className="mobile-bottom-nav" style={{
-        position: "fixed", bottom: 0, left: 0, right: 0, height: "64px",
+        position: "fixed", bottom: 0, left: 0, right: 0,
+        height: "calc(64px + env(safe-area-inset-bottom))",
         background: "#ffffff", borderTop: "1px solid #e8e8e8",
-        display: "flex", alignItems: "center", justifyContent: "space-around",
+        display: "flex", alignItems: "flex-start", justifyContent: "space-around",
         zIndex: 200, paddingBottom: "env(safe-area-inset-bottom)",
+        paddingTop: "8px",
       }}>
         {navItems.map(item => (
           <button key={item.id} onClick={() => setActiveView(item.id)} style={{
