@@ -1427,7 +1427,21 @@ function AdminView({ bizFilter, bizColor, profile }) {
               </div>
               <div>
                 <label style={labelStyle}>Role on this Client</label>
-                <input style={inputStyle} value={assignRole} onChange={e => setAssignRole(e.target.value)} placeholder="e.g. Account Manager" />
+                <select style={inputStyle} value={assignRole} onChange={e => setAssignRole(e.target.value)}>
+                  <option value="">Select role...</option>
+                  <option value="Account Manager">Account Manager</option>
+                  <option value="Community Manager">Community Manager</option>
+                  <option value="Art Director">Art Director</option>
+                  <option value="Filmmaker">Filmmaker</option>
+                  <option value="Editor">Editor</option>
+                  <option value="Media Planner">Media Planner</option>
+                  <option value="Graphic Designer">Graphic Designer</option>
+                  <option value="Copywriter">Copywriter</option>
+                  <option value="Motion Designer">Motion Designer</option>
+                  <option value="Photographer">Photographer</option>
+                  <option value="Social Media Manager">Social Media Manager</option>
+                  <option value="Director">Director</option>
+                </select>
               </div>
             </div>
             <button style={btnStyle} onClick={assign}>Assign</button>
