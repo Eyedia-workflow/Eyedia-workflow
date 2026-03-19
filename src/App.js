@@ -376,18 +376,22 @@ function OverviewView({ bizFilter, bizColor, profile, clientMembers, onNavigate 
       <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
         <div className="stats-grid">
           {[
-            { label: "My Clients", value: enrichedClients.length, sub: `${enrichedClients.filter(p => p.status === "completed").length} completed`, color: bizColor, icon: "◻" },
-            { label: "Total Tasks", value: totalTasks, sub: `${doneTasks} done`, color: "#4ade80", icon: "◈" },
-            { label: "Overdue", value: overdueTasks, sub: "need attention", color: "#ff6b6b", icon: "⚠" },
-            { label: "Pending Approval", value: submittedTasks, sub: "awaiting review", color: "#a855f7", icon: "🔗" },
+            { label: "My Clients", value: enrichedClients.length, sub: `${enrichedClients.filter(p => p.status === "completed").length} completed`, color: bizColor, icon: "◻", filter: null },
+            { label: "Total Tasks", value: totalTasks, sub: `${doneTasks} done`, color: "#4ade80", icon: "◈", filter: "all" },
+            { label: "Overdue", value: overdueTasks, sub: "need attention", color: "#ff6b6b", icon: "⚠", filter: "overdue" },
+            { label: "Pending Approval", value: submittedTasks, sub: "awaiting review", color: "#a855f7", icon: "🔗", filter: "submitted" },
           ].map((s, i) => (
-            <div key={i} style={{ background: "#ffffff", border: "1px solid #e8e8e8", borderRadius: "14px", padding: "18px 20px" }}>
+            <div key={i} onClick={() => { if (s.filter && onNavigate) onNavigate("tasks", s.filter); }}
+              style={{ background: "#ffffff", border: "1px solid #e8e8e8", borderRadius: "14px", padding: "18px 20px", cursor: s.filter ? "pointer" : "default", transition: "box-shadow 0.15s" }}
+              onMouseEnter={e => { if (s.filter) e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.08)"; }}
+              onMouseLeave={e => e.currentTarget.style.boxShadow = "none"}>
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "10px" }}>
                 <span style={{ fontSize: "10px", color: "#666666", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1.2px" }}>{s.label}</span>
                 <span>{s.icon}</span>
               </div>
               <div style={{ fontSize: "30px", fontWeight: 800, color: s.color, fontFamily: "'Bebas Neue', sans-serif", letterSpacing: "1px" }}>{s.value}</div>
               <div style={{ fontSize: "11px", color: "#888888", marginTop: "4px" }}>{s.sub}</div>
+              {s.filter && <div style={{ fontSize: "10px", color: s.color, marginTop: "6px", fontWeight: 600 }}>View →</div>}
             </div>
           ))}
         </div>
@@ -430,18 +434,22 @@ function OverviewView({ bizFilter, bizColor, profile, clientMembers, onNavigate 
       {/* ── Row 1: Stats ── */}
       <div className="stats-grid">
         {[
-          { label: "Team Members", value: employees.length, sub: `in ${bizFilter}`, color: bizColor, icon: "◈" },
-          { label: "Active Clients", value: enrichedClients.filter(p => p.status !== "completed").length, sub: `${enrichedClients.filter(p => p.status === "completed").length} completed`, color: "#4ade80", icon: "◻" },
-          { label: "Overdue Tasks", value: overdueTasks, sub: "need immediate action", color: "#ff6b6b", icon: "⚠" },
-          { label: "Done This Cycle", value: doneTasks, sub: `of ${totalTasks} total tasks`, color: bizColor, icon: "✦" },
+          { label: "Team Members", value: employees.length, sub: `in ${bizFilter}`, color: bizColor, icon: "◈", filter: null },
+          { label: "Active Clients", value: enrichedClients.filter(p => p.status !== "completed").length, sub: `${enrichedClients.filter(p => p.status === "completed").length} completed`, color: "#4ade80", icon: "◻", filter: null },
+          { label: "Overdue Tasks", value: overdueTasks, sub: "need immediate action", color: "#ff6b6b", icon: "⚠", filter: "overdue" },
+          { label: "Done This Cycle", value: doneTasks, sub: `of ${totalTasks} total tasks`, color: bizColor, icon: "✦", filter: "done" },
         ].map((s, i) => (
-          <div key={i} style={{ background: "#ffffff", border: "1px solid #e8e8e8", borderRadius: "14px", padding: "18px 20px" }}>
+          <div key={i} onClick={() => { if (s.filter && onNavigate) onNavigate("tasks", s.filter); }}
+            style={{ background: "#ffffff", border: "1px solid #e8e8e8", borderRadius: "14px", padding: "18px 20px", cursor: s.filter ? "pointer" : "default", transition: "box-shadow 0.15s" }}
+            onMouseEnter={e => { if (s.filter) e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.08)"; }}
+            onMouseLeave={e => e.currentTarget.style.boxShadow = "none"}>
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "10px" }}>
               <span style={{ fontSize: "10px", color: "#666666", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1.2px" }}>{s.label}</span>
               <span>{s.icon}</span>
             </div>
             <div style={{ fontSize: "30px", fontWeight: 800, color: s.color, fontFamily: "'Bebas Neue', sans-serif", letterSpacing: "1px" }}>{s.value}</div>
             <div style={{ fontSize: "11px", color: "#888888", marginTop: "4px" }}>{s.sub}</div>
+            {s.filter && <div style={{ fontSize: "10px", color: s.color, marginTop: "6px", fontWeight: 600 }}>View →</div>}
           </div>
         ))}
       </div>
@@ -661,6 +669,7 @@ function TaskComments({ taskId, profile }) {
 
 // ─── Tasks View (Kanban) ─────────────────────────────────
 function TasksView({ bizFilter, profile, clientMembers, bizColor, initialFilter = "all" }) {
+  const [activeFilter, setActiveFilter] = useState(initialFilter);
   const [tasks, setTasks] = useState([]);
   const [clients, setClients] = useState([]);
   const [employees, setEmployees] = useState([]);
@@ -798,7 +807,13 @@ function TasksView({ bizFilter, profile, clientMembers, bizColor, initialFilter 
   ];
 
   function getColumnTasks(colId) {
-    return tasks.filter(t => {
+    let filtered = tasks;
+    if (activeFilter === "overdue") filtered = tasks.filter(t => t.deadline && new Date(t.deadline) < new Date() && t.status !== "done");
+    else if (activeFilter === "done") filtered = tasks.filter(t => t.status === "done");
+    else if (activeFilter === "in-progress") filtered = tasks.filter(t => t.status === "in-progress");
+    else if (activeFilter === "submitted") filtered = tasks.filter(t => t.status === "submitted" || t.status === "rejected");
+    
+    return filtered.filter(t => {
       if (colId === "submitted") return t.status === "submitted" || t.status === "rejected";
       if (colId === "in-progress") return t.status === "in-progress" || t.status === "overdue" || t.status === "critical" || t.status === "at-risk";
       return t.status === colId;
