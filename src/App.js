@@ -581,6 +581,150 @@ function OverviewView({ bizFilter, bizColor, profile, clientMembers, onNavigate 
   );
 }
 
+// ─── Task Detail Modal ───────────────────────────────────
+function TaskDetailModal({ task, profile, onClose, onApprove, onReject, onSubmit, canAdd }) {
+  const [linkInput, setLinkInput] = useState(task.delivery_link || "");
+  const isAssignee = task.assigned_to === profile?.id;
+  const autoSt = () => {
+    if (!task.deadline) return task.status;
+    const d = new Date(task.deadline); const today = new Date();
+    if (task.status === "done" || task.status === "submitted") return task.status;
+    const days = Math.ceil((d - today) / (1000*60*60*24));
+    if (days < 0) return "overdue";
+    if (days <= 3) return "critical";
+    return task.status;
+  };
+
+  return (
+    <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: "16px" }}>
+      <div onClick={e => e.stopPropagation()} style={{ background: "#ffffff", borderRadius: "18px", width: "100%", maxWidth: "560px", maxHeight: "90vh", overflowY: "auto", boxShadow: "0 20px 60px rgba(0,0,0,0.2)" }}>
+        
+        {/* Header */}
+        <div style={{ padding: "20px 24px 0", borderBottom: "1px solid #f0f0f0", paddingBottom: "16px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "10px" }}>
+            <div style={{ flex: 1, marginRight: "12px" }}>
+              <div style={{ fontSize: "16px", fontWeight: 800, color: "#111", marginBottom: "6px" }}>{task.title}</div>
+              <Badge status={autoSt()} />
+            </div>
+            <button onClick={onClose} style={{ background: "none", border: "none", fontSize: "20px", cursor: "pointer", color: "#888", padding: "0 4px" }}>×</button>
+          </div>
+        </div>
+
+        <div style={{ padding: "20px 24px" }}>
+          {/* Meta info */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "20px" }}>
+            <div style={{ background: "#f8f8f8", borderRadius: "10px", padding: "12px" }}>
+              <div style={{ fontSize: "9px", color: "#888", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px", marginBottom: "4px" }}>Assigned To</div>
+              <div style={{ fontSize: "13px", fontWeight: 600, color: "#111" }}>👤 {task.profiles?.full_name || "—"}</div>
+            </div>
+            <div style={{ background: "#f8f8f8", borderRadius: "10px", padding: "12px" }}>
+              <div style={{ fontSize: "9px", color: "#888", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px", marginBottom: "4px" }}>Client</div>
+              <div style={{ fontSize: "13px", fontWeight: 600, color: "#111" }}>📁 {task.clients?.name || "—"}</div>
+            </div>
+            <div style={{ background: "#f8f8f8", borderRadius: "10px", padding: "12px" }}>
+              <div style={{ fontSize: "9px", color: "#888", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px", marginBottom: "4px" }}>Deadline</div>
+              <div style={{ fontSize: "13px", fontWeight: 600, color: "#111" }}>📅 {task.deadline || "—"}</div>
+            </div>
+            <div style={{ background: "#f8f8f8", borderRadius: "10px", padding: "12px" }}>
+              <div style={{ fontSize: "9px", color: "#888", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px", marginBottom: "4px" }}>Priority</div>
+              <div style={{ fontSize: "13px", fontWeight: 600, color: task.priority === "urgent" ? "#ff4444" : task.priority === "high" ? "#ff8c00" : "#888" }}>
+                {task.priority === "urgent" ? "🔴 Urgent" : task.priority === "high" ? "🟠 High" : task.priority === "low" ? "⚪ Low" : "🔵 Normal"}
+              </div>
+            </div>
+          </div>
+
+          {/* Description */}
+          {task.description && (
+            <div style={{ marginBottom: "20px" }}>
+              <div style={{ fontSize: "10px", color: "#888", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px", marginBottom: "8px" }}>Description</div>
+              <div style={{ fontSize: "13px", color: "#444", lineHeight: 1.7, background: "#f8f8f8", borderRadius: "10px", padding: "14px" }}>{task.description}</div>
+            </div>
+          )}
+
+          {/* Drive Folders */}
+          <div style={{ marginBottom: "20px" }}>
+            <div style={{ fontSize: "10px", color: "#888", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px", marginBottom: "10px" }}>Drive Folders</div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+              {task.material_folder ? (
+                <a href={task.material_folder} target="_blank" rel="noreferrer" style={{ display: "flex", alignItems: "center", gap: "8px", padding: "12px", background: "#FFD60010", border: "1px solid #FFD60030", borderRadius: "10px", textDecoration: "none" }}>
+                  <span style={{ fontSize: "18px" }}>📁</span>
+                  <div>
+                    <div style={{ fontSize: "11px", fontWeight: 700, color: "#111" }}>Material</div>
+                    <div style={{ fontSize: "10px", color: "#FFD600" }}>Open folder →</div>
+                  </div>
+                </a>
+              ) : (
+                <div style={{ padding: "12px", background: "#f8f8f8", borderRadius: "10px", border: "1px dashed #e8e8e8" }}>
+                  <div style={{ fontSize: "11px", fontWeight: 700, color: "#ccc" }}>📁 No material folder</div>
+                </div>
+              )}
+              {task.delivery_folder ? (
+                <a href={task.delivery_folder} target="_blank" rel="noreferrer" style={{ display: "flex", alignItems: "center", gap: "8px", padding: "12px", background: "#00C9CC10", border: "1px solid #00C9CC30", borderRadius: "10px", textDecoration: "none" }}>
+                  <span style={{ fontSize: "18px" }}>📤</span>
+                  <div>
+                    <div style={{ fontSize: "11px", fontWeight: 700, color: "#111" }}>Delivery</div>
+                    <div style={{ fontSize: "10px", color: "#00C9CC" }}>Upload here →</div>
+                  </div>
+                </a>
+              ) : (
+                <div style={{ padding: "12px", background: "#f8f8f8", borderRadius: "10px", border: "1px dashed #e8e8e8" }}>
+                  <div style={{ fontSize: "11px", fontWeight: 700, color: "#ccc" }}>📤 No delivery folder</div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Rejection note */}
+          {task.status === "rejected" && task.rejection_note && (
+            <div style={{ marginBottom: "20px", padding: "12px 14px", background: "#ff444410", border: "1px solid #ff444430", borderRadius: "10px" }}>
+              <div style={{ fontSize: "10px", color: "#ff6b6b", fontWeight: 700, marginBottom: "4px" }}>REJECTION NOTE</div>
+              <div style={{ fontSize: "13px", color: "#ff6b6b" }}>{task.rejection_note}</div>
+            </div>
+          )}
+
+          {/* Delivery link */}
+          {task.delivery_link && (
+            <div style={{ marginBottom: "20px" }}>
+              <div style={{ fontSize: "10px", color: "#888", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px", marginBottom: "8px" }}>Delivery Link</div>
+              <a href={task.delivery_link} target="_blank" rel="noreferrer" style={{ display: "inline-block", padding: "8px 16px", background: task.status === "done" ? "#4ade8015" : "#a855f715", border: `1px solid ${task.status === "done" ? "#4ade8030" : "#a855f730"}`, borderRadius: "8px", color: task.status === "done" ? "#4ade80" : "#a855f7", fontSize: "12px", fontWeight: 600, textDecoration: "none" }}>
+                {task.status === "done" ? "🔗 View Delivery" : "🔗 Review Submission"}
+              </a>
+            </div>
+          )}
+
+          {/* Submit link (assignee only) */}
+          {isAssignee && task.status !== "done" && !task.delivery_link && (
+            <div style={{ marginBottom: "20px" }}>
+              <div style={{ fontSize: "10px", color: "#888", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px", marginBottom: "8px" }}>Submit Delivery</div>
+              <div style={{ display: "flex", gap: "8px" }}>
+                <input value={linkInput} onChange={e => setLinkInput(e.target.value)}
+                  placeholder="Paste delivery link..."
+                  style={{ flex: 1, background: "#f8f8f8", border: "1px solid #e8e8e8", borderRadius: "8px", padding: "8px 12px", fontSize: "12px", color: "#111", outline: "none" }} />
+                <button onClick={() => { onSubmit(task.id, linkInput); onClose(); }}
+                  style={{ padding: "8px 16px", background: "#4ade8015", border: "1px solid #4ade8030", borderRadius: "8px", color: "#4ade80", fontSize: "12px", fontWeight: 600, cursor: "pointer" }}>Submit</button>
+              </div>
+            </div>
+          )}
+
+          {/* Approve/Reject (owners/managers only) */}
+          {canAdd && task.delivery_link && task.status !== "done" && (
+            <div style={{ display: "flex", gap: "8px", marginBottom: "20px" }}>
+              <button onClick={() => { onApprove(task.id); onClose(); }} style={{ flex: 1, padding: "10px", background: "#4ade8015", border: "1px solid #4ade8030", borderRadius: "10px", color: "#4ade80", fontSize: "13px", fontWeight: 700, cursor: "pointer" }}>✅ Approve</button>
+              <button onClick={() => { onReject(task.id); onClose(); }} style={{ flex: 1, padding: "10px", background: "#ff444415", border: "1px solid #ff444430", borderRadius: "10px", color: "#ff6b6b", fontSize: "13px", fontWeight: 700, cursor: "pointer" }}>❌ Reject</button>
+            </div>
+          )}
+
+          {/* Comments */}
+          <div>
+            <div style={{ fontSize: "10px", color: "#888", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px", marginBottom: "8px" }}>Comments</div>
+            <TaskComments taskId={task.id} profile={profile} />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Push Notification Helper ────────────────────────────
 async function sendPush(profile_id, title, message) {
   try {
@@ -677,7 +821,8 @@ function TasksView({ bizFilter, profile, clientMembers, bizColor, initialFilter 
   const [showAdd, setShowAdd] = useState(false);
   const [linkInputs, setLinkInputs] = useState({});
   const [dragOver, setDragOver] = useState(null);
-  const [form, setForm] = useState({ title: "", description: "", assigned_to: "", client_id: "", deadline: "", status: "pending", priority: "normal", drive_folder: "" });
+  const [form, setForm] = useState({ title: "", description: "", assigned_to: "", client_id: "", deadline: "", status: "pending", priority: "normal", drive_folder: "", material_folder: "", delivery_folder: "" });
+  const [selectedTask, setSelectedTask] = useState(null);
   const role = getRole(profile, clientMembers);
   const canAdd = role === "owner" || role === "manager";
 
@@ -721,7 +866,7 @@ function TasksView({ bizFilter, profile, clientMembers, bizColor, initialFilter 
 
   async function addTask() {
     if (!form.title || !form.client_id) return;
-    const { data: newTask } = await supabase.from("tasks").insert([{ ...form, business: bizFilter }]).select().single();
+    const { data: newTask } = await supabase.from("tasks").insert([{ ...form, business: bizFilter, material_folder: form.material_folder || null, delivery_folder: form.delivery_folder || null }]).select().single();
     if (newTask && form.assigned_to) {
       await supabase.from("notifications").insert({ profile_id: form.assigned_to, message: `You've been assigned a new task: "${form.title}"`, type: "assigned", task_id: newTask.id });
       sendPush(form.assigned_to, "New Task Assigned 📋", `You've been assigned: "${form.title}"`);
@@ -872,8 +1017,9 @@ function TasksView({ bizFilter, profile, clientMembers, bizColor, initialFilter 
             <Select label="Priority" value={form.priority} onChange={v => setForm({ ...form, priority: v })}
               options={[{ value: "urgent", label: "🔴 Urgent" }, { value: "high", label: "🟠 High" }, { value: "normal", label: "🔵 Normal" }, { value: "low", label: "⚪ Low" }]} />
           </div>
-          <div style={{ marginBottom: "14px" }}>
-            <Input label="🗂️ Drive Folder URL (optional)" value={form.drive_folder} onChange={v => setForm({ ...form, drive_folder: v })} placeholder="https://drive.google.com/drive/folders/..." />
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "14px" }}>
+            <Input label="📁 Material Folder" value={form.material_folder} onChange={v => setForm({ ...form, material_folder: v })} placeholder="Source files Drive link..." />
+            <Input label="📤 Delivery Folder" value={form.delivery_folder} onChange={v => setForm({ ...form, delivery_folder: v })} placeholder="Upload destination Drive link..." />
           </div>
           <div style={{ display: "flex", gap: "8px" }}>
             <button onClick={addTask} style={{ padding: "8px 18px", background: "#FFD600", border: "none", borderRadius: "8px", color: "#000", fontSize: "12px", fontWeight: 700, cursor: "pointer" }}>Save Task</button>
@@ -914,7 +1060,8 @@ function TasksView({ bizFilter, profile, clientMembers, bizColor, initialFilter 
                     <div key={task.id}
                       draggable={canAdd || task.assigned_to === profile.id}
                       onDragStart={e => onDragStart(e, task.id)}
-                      style={{ background: "#ffffff", border: "1px solid #eeeeee", borderRadius: "10px", padding: "12px", cursor: "grab", boxShadow: "0 1px 4px rgba(0,0,0,0.04)", borderLeft: pColor ? `3px solid ${pColor}` : "1px solid #eeeeee" }}>
+                      onClick={() => setSelectedTask(task)}
+                      style={{ background: "#ffffff", border: "1px solid #eeeeee", borderRadius: "10px", padding: "12px", cursor: "pointer", boxShadow: "0 1px 4px rgba(0,0,0,0.04)", borderLeft: pColor ? `3px solid ${pColor}` : "1px solid #eeeeee" }}>
 
                       {/* Task title + delete */}
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "8px" }}>
@@ -924,7 +1071,7 @@ function TasksView({ bizFilter, profile, clientMembers, bizColor, initialFilter 
                           <span style={{ width: "7px", height: "7px", borderRadius: "50%", background: "#ff6b6b", flexShrink: 0, animation: "pulse 2s infinite" }} />
                         )}
                       </div>
-                        {canAdd && <button onClick={() => deleteTask(task.id)} style={{ padding: "2px 5px", background: "transparent", border: "none", color: "#cccccc", fontSize: "11px", cursor: "pointer", flexShrink: 0 }}>🗑️</button>}
+                        {canAdd && <button onClick={e => { e.stopPropagation(); deleteTask(task.id); }} style={{ padding: "2px 5px", background: "transparent", border: "none", color: "#cccccc", fontSize: "11px", cursor: "pointer", flexShrink: 0 }}>🗑️</button>}
                       </div>
 
                       {/* Meta */}
@@ -949,7 +1096,7 @@ function TasksView({ bizFilter, profile, clientMembers, bizColor, initialFilter 
                             {task.status === "done" ? "🔗 View" : "🔗 Review"}
                           </a>
                           {canAdd && task.status !== "done" && (
-                            <div style={{ display: "flex", gap: "4px" }}>
+                            <div style={{ display: "flex", gap: "4px" }} onClick={e => e.stopPropagation()}>
                               <button onClick={() => approveTask(task.id)} style={{ flex: 1, padding: "5px", background: "#4ade8015", border: "1px solid #4ade8030", borderRadius: "6px", color: "#4ade80", fontSize: "10px", fontWeight: 600, cursor: "pointer" }}>✅</button>
                               <button onClick={() => rejectTask(task.id)} style={{ flex: 1, padding: "5px", background: "#ff444415", border: "1px solid #ff444430", borderRadius: "6px", color: "#ff6b6b", fontSize: "10px", fontWeight: 600, cursor: "pointer" }}>❌</button>
                             </div>
@@ -961,7 +1108,7 @@ function TasksView({ bizFilter, profile, clientMembers, bizColor, initialFilter 
 
                       {/* Submit link for assignee */}
                       {!task.delivery_link && task.assigned_to === profile.id && task.status !== "done" && (
-                        <div style={{ display: "flex", gap: "4px", marginTop: "6px" }}>
+                        <div style={{ display: "flex", gap: "4px", marginTop: "6px" }} onClick={e => e.stopPropagation()}>
                           <input value={linkInputs[task.id] || ""} onChange={e => setLinkInputs(p => ({ ...p, [task.id]: e.target.value }))}
                             placeholder="Drop link..." style={{ flex: 1, background: "#f8f8f8", border: "1px solid #e8e8e8", borderRadius: "6px", padding: "5px 8px", fontSize: "10px", color: "#111", outline: "none" }} />
                           <button onClick={() => { submitLink(task.id, linkInputs[task.id]); setLinkInputs(p => ({ ...p, [task.id]: "" })); }}
@@ -978,6 +1125,19 @@ function TasksView({ bizFilter, profile, clientMembers, bizColor, initialFilter 
           );
         })}
       </div>
+
+      {/* Task Detail Modal */}
+      {selectedTask && (
+        <TaskDetailModal
+          task={selectedTask}
+          profile={profile}
+          canAdd={canAdd}
+          onClose={() => setSelectedTask(null)}
+          onApprove={(id) => { approveTask(id); setSelectedTask(null); }}
+          onReject={(id) => { rejectTask(id); setSelectedTask(null); }}
+          onSubmit={(id, link) => { submitLink(id, link); setSelectedTask(null); }}
+        />
+      )}
     </div>
   );
 }
