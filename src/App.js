@@ -823,8 +823,31 @@ function TasksView({ bizFilter, profile, clientMembers, bizColor, initialFilter 
 
   if (loading) return <Spinner />;
 
+  const FILTERS = [
+    { id: "all", label: "All Tasks", color: "#666" },
+    { id: "overdue", label: "Overdue", color: "#ff6b6b" },
+    { id: "in-progress", label: "In Progress", color: "#FFD600" },
+    { id: "submitted", label: "Pending Approval", color: "#a855f7" },
+    { id: "done", label: "Done", color: "#4ade80" },
+  ];
+
   return (
     <div>
+      {/* Filter bar */}
+      <div style={{ display: "flex", gap: "6px", marginBottom: "16px", flexWrap: "wrap", alignItems: "center" }}>
+        {FILTERS.map(f => (
+          <button key={f.id} onClick={() => setActiveFilter(f.id)}
+            style={{ padding: "5px 12px", borderRadius: "20px", border: `1px solid ${activeFilter === f.id ? f.color : "#e8e8e8"}`, background: activeFilter === f.id ? `${f.color}15` : "#ffffff", color: activeFilter === f.id ? f.color : "#888", fontSize: "11px", fontWeight: activeFilter === f.id ? 700 : 500, cursor: "pointer", transition: "all 0.15s" }}>
+            {f.label}
+          </button>
+        ))}
+        {activeFilter !== "all" && (
+          <span style={{ fontSize: "11px", color: "#888", marginLeft: "4px" }}>
+            — showing {FILTERS.find(f => f.id === activeFilter)?.label} tasks
+          </span>
+        )}
+      </div>
+
       {canAdd && (
         <div style={{ marginBottom: "16px", display: "flex", justifyContent: "flex-end" }}>
           <button onClick={() => setShowAdd(!showAdd)} style={{ padding: "8px 18px", background: "#FFD60015", border: "1px solid #FFD60030", borderRadius: "10px", color: "#FFD600", fontSize: "12px", fontWeight: 600, cursor: "pointer" }}>+ Add Task</button>
