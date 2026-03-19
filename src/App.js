@@ -1567,7 +1567,6 @@ export default function EyediaApp() {
   const [activeBiz, setActiveBiz] = useState("digital");
   const [activeView, setActiveView] = useState("overview");
   const [taskFilter, setTaskFilter] = useState("all");
-  const [taskFilter, setTaskFilter] = useState("all");
   const [authChecked, setAuthChecked] = useState(false);
   const [alertCount, setAlertCount] = useState(0);
   const [clientMembers, setClientMembers] = useState([]);
