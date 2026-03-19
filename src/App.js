@@ -792,9 +792,11 @@ function TasksView({ bizFilter, profile, clientMembers, bizColor, initialFilter 
     if (!taskId) return;
     const task = tasks.find(t => String(t.id) === String(taskId));
     if (!task) return;
-    // Only allow dragging to pending/in-progress — not submitted/done/rejected
+    // Owners/managers can drag to pending/in-progress only (approve/reject handles done)
+    // Employees can only drag their own tasks to in-progress
     if (!["pending", "in-progress"].includes(newStatus)) return;
     if (!canAdd && task.assigned_to !== profile.id) return;
+    if (!canAdd && newStatus === "done") return; // employees cannot drag to done
     await updateStatus(parseInt(taskId), newStatus);
     setDragOver(null);
   }
@@ -862,7 +864,7 @@ function TasksView({ bizFilter, profile, clientMembers, bizColor, initialFilter 
       <div className="kanban-board" style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(240px, 1fr))", gap: "12px", alignItems: "start", overflowX: "auto", paddingBottom: "12px", WebkitOverflowScrolling: "touch" }}>
         {COLUMNS.map(col => {
           const colTasks = getColumnTasks(col.id);
-          const isDragTarget = dragOver === col.id && ["pending", "in-progress"].includes(col.id);
+          const isDragTarget = dragOver === col.id && ["pending", "in-progress"].includes(col.id) && canAdd;
           return (
             <div key={col.id}
               onDragOver={e => { e.preventDefault(); setDragOver(col.id); }}
