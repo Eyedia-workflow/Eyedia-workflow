@@ -1757,7 +1757,7 @@ export default function EyediaApp() {
       `}</style>
 
       {/* ── TOP BAR ── */}
-      <div style={{ borderBottom: "1px solid #e8e8e8", padding: "0 16px", display: "flex", alignItems: "center", justifyContent: "space-between", height: "54px", position: "sticky", top: 0, background: "#f5f5f5", zIndex: 100 }}>
+      <div style={{ borderBottom: "1px solid #e8e8e8", padding: "env(safe-area-inset-top) 16px 0 16px", display: "flex", alignItems: "center", justifyContent: "space-between", minHeight: "54px", height: "calc(54px + env(safe-area-inset-top))", position: "sticky", top: 0, background: "#f5f5f5", zIndex: 100 }}>
 
         {/* Logo */}
         <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
