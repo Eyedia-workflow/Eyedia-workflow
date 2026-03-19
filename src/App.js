@@ -332,10 +332,10 @@ function OverviewView({ bizFilter, bizColor, profile, clientMembers, onNavigate 
       <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
         <div className="stats-grid">
           {[
-            { label: "My Tasks", value: myTasks.length, sub: "total assigned", color: bizColor, icon: "◈", filter: "all" },
-            { label: "Done", value: myDone, sub: "completed", color: "#4ade80", icon: "✅", filter: "done" },
-            { label: "In Progress", value: myInProgress, sub: "active", color: "#FFD600", icon: "⚡", filter: "in-progress" },
-            { label: "Overdue", value: myOverdue, sub: "need attention", color: "#ff6b6b", icon: "⚠", filter: "overdue" },
+            { label: "My Tasks", value: myTasks.length, sub: "total assigned", color: bizColor, icon: "", filter: "all" },
+            { label: "Done", value: myDone, sub: "completed", color: "#4ade80", icon: "", filter: "done" },
+            { label: "In Progress", value: myInProgress, sub: "active", color: "#FFD600", icon: "", filter: "in-progress" },
+            { label: "Overdue", value: myOverdue, sub: "need attention", color: "#ff6b6b", icon: "", filter: "overdue" },
           ].map((s, i) => (
             <div key={i} onClick={() => { if (s.filter) { onNavigate("tasks", s.filter); } }} 
               style={{ background: "#ffffff", border: "1px solid #e8e8e8", borderRadius: "14px", padding: "18px 20px", cursor: s.filter ? "pointer" : "default", transition: "box-shadow 0.15s" }}
@@ -376,10 +376,10 @@ function OverviewView({ bizFilter, bizColor, profile, clientMembers, onNavigate 
       <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
         <div className="stats-grid">
           {[
-            { label: "My Clients", value: enrichedClients.length, sub: `${enrichedClients.filter(p => p.status === "completed").length} completed`, color: bizColor, icon: "◻", filter: null },
-            { label: "Total Tasks", value: totalTasks, sub: `${doneTasks} done`, color: "#4ade80", icon: "◈", filter: "all" },
-            { label: "Overdue", value: overdueTasks, sub: "need attention", color: "#ff6b6b", icon: "⚠", filter: "overdue" },
-            { label: "Pending Approval", value: submittedTasks, sub: "awaiting review", color: "#a855f7", icon: "🔗", filter: "submitted" },
+            { label: "My Clients", value: enrichedClients.length, sub: `${enrichedClients.filter(p => p.status === "completed").length} completed`, color: bizColor, icon: "", filter: null },
+            { label: "Total Tasks", value: totalTasks, sub: `${doneTasks} done`, color: "#4ade80", icon: "", filter: "all" },
+            { label: "Overdue", value: overdueTasks, sub: "need attention", color: "#ff6b6b", icon: "", filter: "overdue" },
+            { label: "Pending Approval", value: submittedTasks, sub: "awaiting review", color: "#a855f7", icon: "", filter: "submitted" },
           ].map((s, i) => (
             <div key={i} onClick={() => { if (s.filter && onNavigate) onNavigate("tasks", s.filter); }}
               style={{ background: "#ffffff", border: "1px solid #e8e8e8", borderRadius: "14px", padding: "18px 20px", cursor: s.filter ? "pointer" : "default", transition: "box-shadow 0.15s" }}
@@ -434,10 +434,10 @@ function OverviewView({ bizFilter, bizColor, profile, clientMembers, onNavigate 
       {/* ── Row 1: Stats ── */}
       <div className="stats-grid">
         {[
-          { label: "Team Members", value: employees.length, sub: `in ${bizFilter}`, color: bizColor, icon: "◈", filter: null },
-          { label: "Active Clients", value: enrichedClients.filter(p => p.status !== "completed").length, sub: `${enrichedClients.filter(p => p.status === "completed").length} completed`, color: "#4ade80", icon: "◻", filter: null },
-          { label: "Overdue Tasks", value: overdueTasks, sub: "need immediate action", color: "#ff6b6b", icon: "⚠", filter: "overdue" },
-          { label: "Done This Cycle", value: doneTasks, sub: `of ${totalTasks} total tasks`, color: bizColor, icon: "✦", filter: "done" },
+          { label: "Team Members", value: employees.length, sub: `in ${bizFilter}`, color: bizColor, icon: "", filter: null },
+          { label: "Active Clients", value: enrichedClients.filter(p => p.status !== "completed").length, sub: `${enrichedClients.filter(p => p.status === "completed").length} completed`, color: "#4ade80", icon: "", filter: null },
+          { label: "Overdue Tasks", value: overdueTasks, sub: "need immediate action", color: "#ff6b6b", icon: "", filter: "overdue" },
+          { label: "Done This Cycle", value: doneTasks, sub: `of ${totalTasks} total tasks`, color: bizColor, icon: "", filter: "done" },
         ].map((s, i) => (
           <div key={i} onClick={() => { if (s.filter && onNavigate) onNavigate("tasks", s.filter); }}
             style={{ background: "#ffffff", border: "1px solid #e8e8e8", borderRadius: "14px", padding: "18px 20px", cursor: s.filter ? "pointer" : "default", transition: "box-shadow 0.15s" }}
@@ -1715,7 +1715,7 @@ export default function EyediaApp() {
   const navItems = [
     { id: "overview", label: "Overview", icon: "⬡" },
     { id: "tasks", label: role === "employee" ? "My Tasks" : "Tasks", icon: "◈", alert: notifications.filter(n => !n.read && n.type === "assigned").length || 0 },
-    { id: "clients", label: "Clients", icon: "◻" },
+    { id: "clients", label: "Clients", icon: "" },
     { id: "deliverables", label: "Deliverables", icon: "◷" },
     ...(role === "owner" ? [{ id: "followups", label: "Follow-ups", icon: "⚡", alert: alertCount }] : []),
     ...(role === "owner" ? [{ id: "admin", label: "Admin", icon: "⚙" }] : []),
