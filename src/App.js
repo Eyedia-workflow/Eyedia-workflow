@@ -177,7 +177,7 @@ function AuthScreen({ onLogin }) {
 }
 
 // ─── Overview ─────────────────────────────────────────────
-function OverviewView({ bizFilter, bizColor, profile, clientMembers }) {
+function OverviewView({ bizFilter, bizColor, profile, clientMembers, onNavigate }) {
   const [employees, setEmployees] = useState([]);
   const [clients, setClients] = useState([]);
   const [tasks, setTasks] = useState([]);
@@ -332,18 +332,22 @@ function OverviewView({ bizFilter, bizColor, profile, clientMembers }) {
       <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
         <div className="stats-grid">
           {[
-            { label: "My Tasks", value: myTasks.length, sub: "total assigned", color: bizColor, icon: "◈" },
-            { label: "Done", value: myDone, sub: "completed", color: "#4ade80", icon: "✅" },
-            { label: "In Progress", value: myInProgress, sub: "active", color: "#FFD600", icon: "⚡" },
-            { label: "Overdue", value: myOverdue, sub: "need attention", color: "#ff6b6b", icon: "⚠" },
+            { label: "My Tasks", value: myTasks.length, sub: "total assigned", color: bizColor, icon: "◈", filter: "all" },
+            { label: "Done", value: myDone, sub: "completed", color: "#4ade80", icon: "✅", filter: "done" },
+            { label: "In Progress", value: myInProgress, sub: "active", color: "#FFD600", icon: "⚡", filter: "in-progress" },
+            { label: "Overdue", value: myOverdue, sub: "need attention", color: "#ff6b6b", icon: "⚠", filter: "overdue" },
           ].map((s, i) => (
-            <div key={i} style={{ background: "#ffffff", border: "1px solid #e8e8e8", borderRadius: "14px", padding: "18px 20px" }}>
+            <div key={i} onClick={() => { if (s.filter) { onNavigate("tasks", s.filter); } }} 
+              style={{ background: "#ffffff", border: "1px solid #e8e8e8", borderRadius: "14px", padding: "18px 20px", cursor: s.filter ? "pointer" : "default", transition: "box-shadow 0.15s" }}
+              onMouseEnter={e => { if (s.filter) e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.08)"; }}
+              onMouseLeave={e => e.currentTarget.style.boxShadow = "none"}>
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "10px" }}>
                 <span style={{ fontSize: "10px", color: "#666666", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1.2px" }}>{s.label}</span>
                 <span>{s.icon}</span>
               </div>
               <div style={{ fontSize: "30px", fontWeight: 800, color: s.color, fontFamily: "'Bebas Neue', sans-serif", letterSpacing: "1px" }}>{s.value}</div>
               <div style={{ fontSize: "11px", color: "#888888", marginTop: "4px" }}>{s.sub}</div>
+              {s.filter && <div style={{ fontSize: "10px", color: s.color, marginTop: "6px", fontWeight: 600 }}>View →</div>}
             </div>
           ))}
         </div>
@@ -656,7 +660,7 @@ function TaskComments({ taskId, profile }) {
 }
 
 // ─── Tasks View (Kanban) ─────────────────────────────────
-function TasksView({ bizFilter, profile, clientMembers, bizColor }) {
+function TasksView({ bizFilter, profile, clientMembers, bizColor, initialFilter = "all" }) {
   const [tasks, setTasks] = useState([]);
   const [clients, setClients] = useState([]);
   const [employees, setEmployees] = useState([]);
@@ -840,7 +844,7 @@ function TasksView({ bizFilter, profile, clientMembers, bizColor }) {
       )}
 
       {/* Kanban Board */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(240px, 1fr))", gap: "12px", alignItems: "start", overflowX: "auto", paddingBottom: "12px", WebkitOverflowScrolling: "touch" }}>
+      <div className="kanban-board" style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(240px, 1fr))", gap: "12px", alignItems: "start", overflowX: "auto", paddingBottom: "12px", WebkitOverflowScrolling: "touch" }}>
         {COLUMNS.map(col => {
           const colTasks = getColumnTasks(col.id);
           const isDragTarget = dragOver === col.id && ["pending", "in-progress"].includes(col.id);
@@ -1562,6 +1566,8 @@ export default function EyediaApp() {
   const [profile, setProfile] = useState(null);
   const [activeBiz, setActiveBiz] = useState("digital");
   const [activeView, setActiveView] = useState("overview");
+  const [taskFilter, setTaskFilter] = useState("all");
+  const [taskFilter, setTaskFilter] = useState("all");
   const [authChecked, setAuthChecked] = useState(false);
   const [alertCount, setAlertCount] = useState(0);
   const [clientMembers, setClientMembers] = useState([]);
@@ -1727,6 +1733,7 @@ export default function EyediaApp() {
           .biz-toggle button { padding: 6px 10px !important; font-size: 11px !important; }
           .stats-grid { grid-template-columns: repeat(2, 1fr) !important; }
           .two-col-grid { grid-template-columns: 1fr !important; }
+          .kanban-board { grid-template-columns: 1fr !important; overflow-x: hidden !important; }
         }
         @media (min-width: 768px) {
           .mobile-bottom-nav { display: none !important; }
@@ -1865,8 +1872,8 @@ export default function EyediaApp() {
                 <p style={{ fontSize: "10px", color: "#666666", paddingLeft: "11px" }}>{bizName}</p>
               </div>
             </div>
-            {activeView === "overview" && <OverviewView bizFilter={activeBiz} bizColor={bizColor} profile={profile} clientMembers={clientMembers} />}
-            {activeView === "tasks" && <TasksView bizFilter={activeBiz} bizColor={bizColor} profile={profile} clientMembers={clientMembers} />}
+            {activeView === "overview" && <OverviewView bizFilter={activeBiz} bizColor={bizColor} profile={profile} clientMembers={clientMembers} onNavigate={(view, filter) => { setActiveView(view); setTaskFilter(filter); }} />}
+            {activeView === "tasks" && <TasksView bizFilter={activeBiz} bizColor={bizColor} profile={profile} clientMembers={clientMembers} initialFilter={taskFilter} />}
             {activeView === "clients" && <ClientsView bizFilter={activeBiz} bizColor={bizColor} profile={profile} clientMembers={clientMembers} />}
             {activeView === "deliverables" && <DeliverablesView bizFilter={activeBiz} profile={profile} clientMembers={clientMembers} />}
             {activeView === "followups" && <FollowUpsView bizFilter={activeBiz} />}
