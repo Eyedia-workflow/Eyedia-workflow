@@ -1169,7 +1169,7 @@ function FollowUpsView({ bizFilter }) {
     setGenerating(true);
     setReportMsg("");
     try {
-      const res = await fetch("https://nbojegbpyzfhfeqoiebn.supabase.co/functions/v1/claude-insights", {
+      const res = await fetch("https://nbojegbpyzfhfeqoiebn.supabase.co/functions/v1/quick-handler", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
